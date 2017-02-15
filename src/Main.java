@@ -1,4 +1,7 @@
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import javax.swing.Timer;
 
 import org.eclipse.swt.SWT;
@@ -8,14 +11,17 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.wb.swt.SWTResourceManager;
 
 import com.leapmotion.leap.Controller;
 import com.leapmotion.leap.Frame;
 import com.leapmotion.leap.Hand;
 
-import libsvm.svm_model;
-import org.eclipse.wb.swt.SWTResourceManager;
+import DriverAttentionState.*;
+import DriverAttentionState.DriverAttentionState.*;
 import io.github.adrianulbona.hmm.Model;
+import io.github.adrianulbona.hmm.solver.MostProbableStateSequenceFinder;
+import libsvm.svm_model;
 
 public class Main {
 	protected Shell shell;
@@ -29,7 +35,10 @@ public class Main {
 
 	Timer timer;
 	
-	//Model<int, double> model;
+	Model<DriverState, Activity> model = DriverAttentionState.INSTANCE.model;
+	List<DriverAttentionState.Activity> activity = Arrays.asList(Activity.ONWHEEL,Activity.RESTING,Activity.NONE);
+	List<DriverState> driverState = new MostProbableStateSequenceFinder<>(model).basedOn(activity);
+	
 
 	public static double[] getSample(int handNumber) {
 		Controller controller = new Controller();
