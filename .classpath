@@ -17,5 +17,6 @@
 	<classpathentry kind="lib" path="lib/org.eclipse.text_3.6.0.v20160503-1849.jar"/>
 	<classpathentry kind="lib" path="lib/org.eclipse.ui.forms_3.7.0.v20160518-1929.jar"/>
 	<classpathentry kind="lib" path="lib/org.eclipse.ui.workbench_3.108.1.v20160819-2118.jar"/>
+	<classpathentry kind="lib" path="lib/jahmm-0.6.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

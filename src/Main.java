@@ -27,7 +27,7 @@ public class Main {
 	private Label lblData;
 	private Label samplesCollected;
 
-	Timer timer;	
+	Timer timer;
 
 	public static double[] getSample(int handNumber) {
 		Controller controller = new Controller();
