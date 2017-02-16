@@ -1,4 +1,9 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.Timer;
 
@@ -28,7 +33,8 @@ public class Main {
 	private Label samplesCollected;
 
 	Timer timer;
-
+	
+	
 	public static double[] getSample(int handNumber) {
 		Controller controller = new Controller();
 		Frame frame = controller.frame();
@@ -97,14 +103,15 @@ public class Main {
 	}
 
 	public static void main(String[] args) {
-		try {
+		 try {
 			Main window = new Main();
 			window.open();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-
+	
+	
 	public void open() {
 		Display display = Display.getDefault();
 		createContents();
