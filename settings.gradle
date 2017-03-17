@@ -1,1 +1,1 @@
-include ':feedback-system'
+include ':app'
