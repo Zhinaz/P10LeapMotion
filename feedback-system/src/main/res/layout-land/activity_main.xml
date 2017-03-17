@@ -45,16 +45,10 @@
             tools:layout_editor_absoluteY="16dp" />
 
         <TextView
-            android:id="@+id/txt_longitude"
+            android:id="@+id/txt_location"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Longitude" />
-
-        <TextView
-            android:id="@+id/txt_latitude"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Latitude"/>
+            tools:text="Location" />
 
     </LinearLayout>
 </android.support.constraint.ConstraintLayout>
