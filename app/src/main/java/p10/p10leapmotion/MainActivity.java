@@ -1,12 +1,17 @@
 package p10.p10leapmotion;
 
 import android.Manifest;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,10 +24,14 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
+import java.util.ArrayList;
+import java.util.Set;
+
 public class MainActivity extends AppCompatActivity implements ConnectionCallbacks, OnConnectionFailedListener, LocationListener {
 
     // UI Elements
     TextView txt_location;
+    ListView lst_btdevices;
 
     private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 1000;
 
@@ -36,6 +45,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
     private boolean mRequestingLocationUpdates = false;
     private LocationRequest mLocationRequest;
 
+    private BluetoothAdapter mBluetoothAdapter;
+    private Set<BluetoothDevice> pairedDevices;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,11 +60,20 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         }
 
         togglePeriodicLocationUpdates();
+        try {
+            startBluetooth();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        updateBluetoothList();
     }
 
     private void initialiseComponents() {
         // UI Elements
         txt_location = (TextView)findViewById(R.id.txt_location);
+        lst_btdevices = (ListView)findViewById(R.id.lst_btdevices);
+
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
     protected void buildGoogleApiClient() {
@@ -135,11 +155,46 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
     }
 
+    public void startBluetooth() {
+        if (!mBluetoothAdapter.isEnabled()) {
+            Intent enableBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBT, 0);
+            Toast.makeText(getApplicationContext(), "Bluetooth enabled",Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(getApplicationContext(), "Bluetooth already enabled", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void stopBluetooth() {
+        mBluetoothAdapter.disable();
+        Toast.makeText(getApplicationContext(), "Bluetooth disabled",Toast.LENGTH_SHORT).show();
+    }
+
+    public void publicBluetooth() {
+        Intent getVisible = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        startActivityForResult(getVisible, 0);
+    }
+
+    public void updateBluetoothList() {
+        pairedDevices = mBluetoothAdapter.getBondedDevices();
+
+        ArrayList list = new ArrayList();
+
+        for (BluetoothDevice bt : pairedDevices){
+            list.add(bt.getName());
+        }
+        final ArrayAdapter adapter = new ArrayAdapter(this,android.R.layout.simple_list_item_1, list);
+        lst_btdevices.setAdapter(adapter);
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
         if (mGoogleApiClient != null) {
             mGoogleApiClient.connect();
+        }
+        if (!mBluetoothAdapter.isEnabled()) {
+            startBluetooth();
         }
     }
 
@@ -148,6 +203,9 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         super.onStop();
         if (mGoogleApiClient.isConnected()) {
             mGoogleApiClient.disconnect();
+        }
+        if (mBluetoothAdapter.isEnabled()) {
+            stopBluetooth();
         }
     }
 
@@ -164,6 +222,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
     protected void onPause() {
         super.onPause();
         stopLocationUpdates();
+
     }
 
     @Override

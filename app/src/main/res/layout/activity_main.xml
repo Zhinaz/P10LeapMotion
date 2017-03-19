@@ -51,6 +51,11 @@
             android:layout_height="wrap_content"
             tools:text="Location" />
 
+        <ListView
+            android:id="@+id/lst_btdevices"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
     </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>
