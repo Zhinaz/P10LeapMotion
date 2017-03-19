@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">P10LeapMotion</string>
+    <string name="google_maps_key" templateMergeStrategy="preserve">AIzaSyBKqGMK9293HrEWhrUUxxo0N3B2mb96Pfg</string>
+</resources>

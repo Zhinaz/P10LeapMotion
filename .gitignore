@@ -6,26 +6,4 @@
 .DS_Store
 /build
 /captures
-.smh
-/volley/build/
-/volley/.idea/
-
-# Java class files
-*.class
-
-# Generated files
-bin/
-gen/
-out/
-
-# Built application files
-*.apk
-*.ap_
-
-# Log Files
-*.log
-
-# Android Studio Navigation editor temp files
-.navigation/
-
-.aar
+.externalNativeBuild
