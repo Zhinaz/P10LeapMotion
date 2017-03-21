@@ -3,12 +3,16 @@ package p10.p10leapmotion;
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
@@ -27,26 +31,20 @@ import com.google.android.gms.location.LocationServices;
 import java.util.ArrayList;
 import java.util.Set;
 
-public class MainActivity extends AppCompatActivity implements ConnectionCallbacks, OnConnectionFailedListener, LocationListener {
+public class MainActivity extends AppCompatActivity {
 
     // UI Elements
-    TextView txt_location;
+    public TextView txt_location;
     ListView lst_btdevices;
-
-    private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 1000;
-
-    // Location updates intervals in sec
-    private static int UPDATE_INTERVAL = 10000; // 10 sec
-    private static int FATEST_INTERVAL = 5000; // 5 sec
-    private static int DISPLACEMENT = 10; // 10 meters
-
-    private Location mLastLocation;
-    private GoogleApiClient mGoogleApiClient;
-    private boolean mRequestingLocationUpdates = false;
-    private LocationRequest mLocationRequest;
 
     private BluetoothAdapter mBluetoothAdapter;
     private Set<BluetoothDevice> pairedDevices;
+    p10.p10leapmotion.Location location;
+
+    public static final String LOCATION_CHANGED = "LOCATION_CHANGED";
+    public static final String LAST_LOCATION_SPEED = "LAST_LOCATION_SPEED";
+    public static final String LAST_LOCATION_LONGITUDE = "LAST_LOCATION_LONGITUDE";
+    public static final String LAST_LOCATION_LATITUDE = "LAST_LOCATION_LATITUDE";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,12 +52,9 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         setContentView(R.layout.activity_main);
         initialiseComponents();
 
-        if (checkPlayServices()) {
-            buildGoogleApiClient();
-            createLocationRequest();
-        }
 
-        togglePeriodicLocationUpdates();
+
+        location.togglePeriodicLocationUpdates();
         try {
             startBluetooth();
         } catch (Exception e) {
@@ -74,85 +69,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         lst_btdevices = (ListView)findViewById(R.id.lst_btdevices);
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-    }
-
-    protected void buildGoogleApiClient() {
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API).build();
-    }
-
-    private boolean checkPlayServices() {
-        int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
-        if (resultCode != ConnectionResult.SUCCESS) {
-            if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
-                GooglePlayServicesUtil.getErrorDialog(resultCode, this, PLAY_SERVICES_RESOLUTION_REQUEST).show();
-            } else {
-                Toast.makeText(getApplicationContext(), "This device is not supported.", Toast.LENGTH_LONG).show();
-                finish();
-            }
-            return false;
-        }
-        return true;
-    }
-
-    protected void createLocationRequest() {
-        mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(UPDATE_INTERVAL);
-        mLocationRequest.setFastestInterval(FATEST_INTERVAL);
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        mLocationRequest.setSmallestDisplacement(DISPLACEMENT); // 10 meters
-    }
-
-    private void displayLocation() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-
-            } else {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-            }
-        }
-        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-
-        if (mLastLocation != null) {
-            double latitude = mLastLocation.getLatitude();
-            double longitude = mLastLocation.getLongitude();
-
-            txt_location.setText(String.valueOf(latitude) + ", " + String.valueOf(longitude));
-
-        } else {
-            txt_location.setText("error" + ", " + "error");
-        }
-    }
-
-    private void togglePeriodicLocationUpdates() {
-        // Used to be a toggle button
-        if (!mRequestingLocationUpdates) {
-            mRequestingLocationUpdates = true;
-            startLocationUpdates();
-
-        } else {
-            mRequestingLocationUpdates = false;
-            stopLocationUpdates();
-        }
-    }
-
-    protected void startLocationUpdates() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-
-            } else {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-            }
-        }
-        if (mGoogleApiClient.isConnected()) {
-            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
-        }
-    }
-
-    protected void stopLocationUpdates() {
-        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+        location = new p10.p10leapmotion.Location(this, this);
+        LocalBroadcastManager.getInstance(this).registerReceiver(alarmCalledReceiver, new IntentFilter(LOCATION_CHANGED));
     }
 
     public void startBluetooth() {
@@ -187,11 +105,26 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         lst_btdevices.setAdapter(adapter);
     }
 
+    public BroadcastReceiver alarmCalledReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            float locationSpeed = intent.getFloatExtra(LAST_LOCATION_SPEED, -1);
+            float locationLatitude = intent.getFloatExtra(LAST_LOCATION_LATITUDE, 999);
+            float locationLongitude = intent.getFloatExtra(LAST_LOCATION_LONGITUDE, 999);
+
+            if (locationLatitude != -1 || locationLongitude != -1) {
+                txt_location.setText("error, error");
+            } else {
+                txt_location.setText(String.valueOf(locationLatitude) + ", " + String.valueOf(locationLongitude));
+            }
+        }
+    };
+
     @Override
     protected void onStart() {
         super.onStart();
-        if (mGoogleApiClient != null) {
-            mGoogleApiClient.connect();
+        if (location.mGoogleApiClient != null) {
+            location.mGoogleApiClient.connect();
         }
         if (!mBluetoothAdapter.isEnabled()) {
             startBluetooth();
@@ -201,8 +134,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
     @Override
     protected void onStop() {
         super.onStop();
-        if (mGoogleApiClient.isConnected()) {
-            mGoogleApiClient.disconnect();
+        if (location.mGoogleApiClient.isConnected()) {
+            location.mGoogleApiClient.disconnect();
         }
         if (mBluetoothAdapter.isEnabled()) {
             stopBluetooth();
@@ -212,46 +145,16 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
     @Override
     public void onResume() {
         super.onResume();
-        checkPlayServices();
-        if (mGoogleApiClient.isConnected() && mRequestingLocationUpdates) {
-            startLocationUpdates();
+        location.checkPlayServices();
+        if (location.mGoogleApiClient.isConnected() && location.mRequestingLocationUpdates) {
+            location.startLocationUpdates();
         }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        stopLocationUpdates();
-
-    }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult result) { }
-
-    @Override
-    public void onConnected(Bundle arg0) {
-        displayLocation();
-
-        if (mRequestingLocationUpdates) {
-            startLocationUpdates();
-        }
-    }
-
-    @Override
-    public void onConnectionSuspended(int arg0) {
-        mGoogleApiClient.connect();
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        // Assign the new location
-        mLastLocation = location;
-
-        Toast.makeText(getApplicationContext(), "Location changed!",
-                Toast.LENGTH_SHORT).show();
-
-        // Displaying the new location on UI
-        displayLocation();
+        location.stopLocationUpdates();
     }
 
 }
