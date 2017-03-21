@@ -52,8 +52,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         initialiseComponents();
 
-
-
         location.togglePeriodicLocationUpdates();
         try {
             startBluetooth();
@@ -68,8 +66,8 @@ public class MainActivity extends AppCompatActivity {
         txt_location = (TextView)findViewById(R.id.txt_location);
         lst_btdevices = (ListView)findViewById(R.id.lst_btdevices);
 
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         location = new p10.p10leapmotion.Location(this, this);
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         LocalBroadcastManager.getInstance(this).registerReceiver(alarmCalledReceiver, new IntentFilter(LOCATION_CHANGED));
     }
 

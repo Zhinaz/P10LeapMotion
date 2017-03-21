@@ -44,11 +44,11 @@ public class Location implements GoogleApiClient.ConnectionCallbacks, GoogleApiC
         mContext = context;
         mActivity = activity;
 
-        createLocationRequest();
-
         if (checkPlayServices()) {
             buildGoogleApiClient();
         }
+
+        createLocationRequest();
     }
 
     protected void buildGoogleApiClient() {
