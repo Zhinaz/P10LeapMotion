@@ -7,26 +7,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.location.Location;
 import android.os.Bundle;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
-import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
-import com.google.android.gms.location.LocationListener;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -110,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
             float locationLatitude = intent.getFloatExtra(LAST_LOCATION_LATITUDE, 999);
             float locationLongitude = intent.getFloatExtra(LAST_LOCATION_LONGITUDE, 999);
 
-            if (locationLatitude != -1 || locationLongitude != -1) {
+            if (locationLatitude == 999 || locationLongitude == 999) {
                 txt_location.setText("error, error");
             } else {
                 txt_location.setText(String.valueOf(locationLatitude) + ", " + String.valueOf(locationLongitude));
@@ -143,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
-        location.checkPlayServices();
+        location.isGooglePlayServicesAvailable(this);
         if (location.mGoogleApiClient.isConnected() && location.mRequestingLocationUpdates) {
             location.startLocationUpdates();
         }
@@ -152,7 +139,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        location.stopLocationUpdates();
+        if (!location.mGoogleApiClient.isConnected()) {
+            location.stopLocationUpdates();
+        }
+
     }
 
 }
