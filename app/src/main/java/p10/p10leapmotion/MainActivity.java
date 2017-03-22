@@ -24,14 +24,17 @@ public class MainActivity extends AppCompatActivity {
     public TextView txt_location;
     ListView lst_btdevices;
 
-    private BluetoothAdapter mBluetoothAdapter;
-    private Set<BluetoothDevice> pairedDevices;
     p10.p10leapmotion.Location location;
+    Bluetooth bluetooth;
 
     public static final String LOCATION_CHANGED = "LOCATION_CHANGED";
     public static final String LAST_LOCATION_SPEED = "LAST_LOCATION_SPEED";
     public static final String LAST_LOCATION_LONGITUDE = "LAST_LOCATION_LONGITUDE";
     public static final String LAST_LOCATION_LATITUDE = "LAST_LOCATION_LATITUDE";
+    public static final String BLUETOOTH_PAIRED_DEVICES = "BLUETOOTH_PAIRED_DEVICES";
+
+    ArrayList bluetoothDevices;
+    final ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, bluetoothDevices);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,11 +44,11 @@ public class MainActivity extends AppCompatActivity {
 
         location.togglePeriodicLocationUpdates();
         try {
-            startBluetooth();
+            bluetooth.startBluetooth();
         } catch (Exception e) {
             e.printStackTrace();
         }
-        updateBluetoothList();
+        bluetooth.updateBluetoothList();
     }
 
     private void initialiseComponents() {
@@ -54,41 +57,18 @@ public class MainActivity extends AppCompatActivity {
         lst_btdevices = (ListView)findViewById(R.id.lst_btdevices);
 
         location = new p10.p10leapmotion.Location(this, this);
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        bluetooth.mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         LocalBroadcastManager.getInstance(this).registerReceiver(alarmCalledReceiver, new IntentFilter(LOCATION_CHANGED));
+        LocalBroadcastManager.getInstance(this).registerReceiver(bluetoothReceiver, new IntentFilter(BLUETOOTH_PAIRED_DEVICES));
     }
 
-    public void startBluetooth() {
-        if (!mBluetoothAdapter.isEnabled()) {
-            Intent enableBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBT, 0);
-            Toast.makeText(getApplicationContext(), "Bluetooth enabled",Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(getApplicationContext(), "Bluetooth already enabled", Toast.LENGTH_SHORT).show();
+    public BroadcastReceiver bluetoothReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            bluetoothDevices = intent.getStringArrayListExtra(BLUETOOTH_PAIRED_DEVICES);
+            lst_btdevices.setAdapter(adapter);
         }
-    }
-
-    public void stopBluetooth() {
-        mBluetoothAdapter.disable();
-        Toast.makeText(getApplicationContext(), "Bluetooth disabled",Toast.LENGTH_SHORT).show();
-    }
-
-    public void publicBluetooth() {
-        Intent getVisible = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        startActivityForResult(getVisible, 0);
-    }
-
-    public void updateBluetoothList() {
-        pairedDevices = mBluetoothAdapter.getBondedDevices();
-
-        ArrayList list = new ArrayList();
-
-        for (BluetoothDevice bt : pairedDevices){
-            list.add(bt.getName());
-        }
-        final ArrayAdapter adapter = new ArrayAdapter(this,android.R.layout.simple_list_item_1, list);
-        lst_btdevices.setAdapter(adapter);
-    }
+    };
 
     public BroadcastReceiver alarmCalledReceiver = new BroadcastReceiver() {
         @Override
@@ -111,8 +91,8 @@ public class MainActivity extends AppCompatActivity {
         if (location.mGoogleApiClient != null) {
             location.mGoogleApiClient.connect();
         }
-        if (!mBluetoothAdapter.isEnabled()) {
-            startBluetooth();
+        if (!bluetooth.mBluetoothAdapter.isEnabled()) {
+            bluetooth.startBluetooth();
         }
     }
 
@@ -122,8 +102,8 @@ public class MainActivity extends AppCompatActivity {
         if (location.mGoogleApiClient.isConnected()) {
             location.mGoogleApiClient.disconnect();
         }
-        if (mBluetoothAdapter.isEnabled()) {
-            stopBluetooth();
+        if (bluetooth.mBluetoothAdapter.isEnabled()) {
+            bluetooth.stopBluetooth();
         }
     }
 

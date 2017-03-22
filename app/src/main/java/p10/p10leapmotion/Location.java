@@ -72,7 +72,6 @@ public class Location implements GoogleApiClient.ConnectionCallbacks, GoogleApiC
         if (!mRequestingLocationUpdates) {
             mRequestingLocationUpdates = true;
             startLocationUpdates();
-
         } else {
             mRequestingLocationUpdates = false;
             stopLocationUpdates();
