@@ -6,6 +6,9 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-feature android:name="android.hardware.location.gps" />
 
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
     <uses-permission android:name="android.permission.BLUETOOTH"/>
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
 
@@ -21,7 +24,7 @@
             android:value="@integer/google_play_services_version" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBKqGMK9293HrEWhrUUxxo0N3B2mb96Pfg"/>
+            android:value="AIzaSyB0ThpI7OeuUnrCQVUIjvs4pZeyjfeKFmE"/>
         <activity android:name=".MainActivity"
             android:screenOrientation="sensorLandscape">
             <intent-filter>

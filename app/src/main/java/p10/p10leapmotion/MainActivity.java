@@ -8,7 +8,9 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -19,6 +21,7 @@ public class MainActivity extends AppCompatActivity {
     // UI Elements
     public TextView txt_location;
     ListView lst_btdevices;
+    Button btn_gps;
 
     p10.p10leapmotion.Location location;
     Bluetooth bluetooth;
@@ -30,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String BLUETOOTH_PAIRED_DEVICES = "BLUETOOTH_PAIRED_DEVICES";
 
     ArrayList bluetoothDevices;
-    final ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, bluetoothDevices);
+    ArrayAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +41,12 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         initialiseComponents();
 
-        location.togglePeriodicLocationUpdates();
+        if (location.isGooglePlayServicesAvailable(this)) {
+            location.buildGoogleApiClient();
+            location.createLocationRequest();
+            location.startLocationUpdates();
+        }
+
         try {
             bluetooth.startBluetooth();
         } catch (Exception e) {
@@ -51,27 +59,39 @@ public class MainActivity extends AppCompatActivity {
         // UI Elements
         txt_location = (TextView)findViewById(R.id.txt_location);
         lst_btdevices = (ListView)findViewById(R.id.lst_btdevices);
+        btn_gps = (Button)findViewById(R.id.btn_gps);
 
         location = new p10.p10leapmotion.Location(this, this);
-        bluetooth.mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        bluetooth = new Bluetooth(this,this);
+        adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, bluetoothDevices);
         LocalBroadcastManager.getInstance(this).registerReceiver(alarmCalledReceiver, new IntentFilter(LOCATION_CHANGED));
         LocalBroadcastManager.getInstance(this).registerReceiver(bluetoothReceiver, new IntentFilter(BLUETOOTH_PAIRED_DEVICES));
+
+        btn_gps.setOnClickListener( new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                location.startLocationUpdates();
+            }
+        });
     }
 
     public BroadcastReceiver bluetoothReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             bluetoothDevices = intent.getStringArrayListExtra(BLUETOOTH_PAIRED_DEVICES);
-            lst_btdevices.setAdapter(adapter);
+            if(!bluetoothDevices.isEmpty()) {
+                lst_btdevices.setAdapter(adapter);
+            }
         }
     };
 
     public BroadcastReceiver alarmCalledReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            float locationSpeed = intent.getFloatExtra(LAST_LOCATION_SPEED, -1);
-            float locationLatitude = intent.getFloatExtra(LAST_LOCATION_LATITUDE, 999);
-            float locationLongitude = intent.getFloatExtra(LAST_LOCATION_LONGITUDE, 999);
+            double locationSpeed = intent.getDoubleExtra(LAST_LOCATION_SPEED, -1);
+            double locationLatitude = intent.getDoubleExtra(LAST_LOCATION_LATITUDE, 999);
+            double locationLongitude = intent.getDoubleExtra(LAST_LOCATION_LONGITUDE, 999);
 
             if (locationLatitude == 999 || locationLongitude == 999) {
                 txt_location.setText("error, error");
@@ -93,6 +113,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        location.isGooglePlayServicesAvailable(this);
+        if (location.mGoogleApiClient.isConnected() && location.mRequestingLocationUpdates) {
+            location.startLocationUpdates();
+        }
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         if (location.mGoogleApiClient.isConnected()) {
@@ -100,15 +129,6 @@ public class MainActivity extends AppCompatActivity {
         }
         if (bluetooth.mBluetoothAdapter.isEnabled()) {
             bluetooth.stopBluetooth();
-        }
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        location.isGooglePlayServicesAvailable(this);
-        if (location.mGoogleApiClient.isConnected() && location.mRequestingLocationUpdates) {
-            location.startLocationUpdates();
         }
     }
 

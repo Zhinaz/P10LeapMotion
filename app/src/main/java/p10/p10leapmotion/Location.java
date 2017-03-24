@@ -9,6 +9,8 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -17,6 +19,8 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
+import static android.R.attr.data;
+import static android.R.attr.targetActivity;
 import static p10.p10leapmotion.MainActivity.LAST_LOCATION_LATITUDE;
 import static p10.p10leapmotion.MainActivity.LAST_LOCATION_LONGITUDE;
 import static p10.p10leapmotion.MainActivity.LAST_LOCATION_SPEED;
@@ -25,9 +29,9 @@ import static p10.p10leapmotion.MainActivity.LOCATION_CHANGED;
 public class Location implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     // Location updates intervals in sec
-    private static int UPDATE_INTERVAL = 10000; // 10 sec
-    private static int FATEST_INTERVAL = 5000; // 5 sec
-    private static int DISPLACEMENT = 10; // 10 meters
+    private static int UPDATE_INTERVAL = 80000; // 10 sec
+    private static int FATEST_INTERVAL = 4000; // 5 sec
+    private static int DISPLACEMENT = 5; // 10 meters
 
     private LocationRequest mLocationRequest;
     GoogleApiClient mGoogleApiClient;
@@ -40,16 +44,10 @@ public class Location implements GoogleApiClient.ConnectionCallbacks, GoogleApiC
     public Location(Context context, Activity activity) {
         mContext = context;
         mActivity = activity;
-
-        if (isGooglePlayServicesAvailable(mActivity)) {
-            buildGoogleApiClient();
-        }
-
-        createLocationRequest();
     }
 
     protected void buildGoogleApiClient() {
-        mGoogleApiClient = new GoogleApiClient.Builder(mContext)
+        mGoogleApiClient = new GoogleApiClient.Builder(mActivity)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API).build();
@@ -67,32 +65,31 @@ public class Location implements GoogleApiClient.ConnectionCallbacks, GoogleApiC
         return true;
     }
 
-    public void togglePeriodicLocationUpdates() {
-        // Used to be a toggle button
-        if (!mRequestingLocationUpdates) {
-            mRequestingLocationUpdates = true;
-            startLocationUpdates();
-        } else {
-            mRequestingLocationUpdates = false;
-            stopLocationUpdates();
-        }
-    }
-
     protected void startLocationUpdates() {
+        mRequestingLocationUpdates = true;
         if (ContextCompat.checkSelfPermission(mContext, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(mActivity, android.Manifest.permission.ACCESS_FINE_LOCATION)) {
-
-            } else {
+            if (!ActivityCompat.shouldShowRequestPermissionRationale(mActivity, android.Manifest.permission.ACCESS_FINE_LOCATION)) {
                 ActivityCompat.requestPermissions(mActivity, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             }
         }
         if (mGoogleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+        } else if (mGoogleApiClient.isConnecting()) {
+            System.out.print("%%%%%%%%%%%% GoogleApiClient is NOT connected %%%%%%%%%%%%%");
+            Log.w("FeedbackApp", "GoogleApiClient is NOT connecting");
+            Toast.makeText(mContext.getApplicationContext(), "GoogleApiClient is NOT connecting", Toast.LENGTH_LONG).show();
+        } else {
+            System.out.print("%%%%%%%%%%%% GoogleApiClient is NOT connected %%%%%%%%%%%%%");
+            Log.w("FeedbackApp", "GoogleApiClient is NOT connected");
+            Toast.makeText(mContext.getApplicationContext(), "GoogleApiClient is NOT connected", Toast.LENGTH_LONG).show();
         }
     }
 
     protected void stopLocationUpdates() {
-        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+        mRequestingLocationUpdates = false;
+        if (mGoogleApiClient.isConnected()) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+        }
     }
 
     protected void createLocationRequest() {
@@ -104,9 +101,7 @@ public class Location implements GoogleApiClient.ConnectionCallbacks, GoogleApiC
     }
 
     public void displayLocation() {
-
         mActivity.runOnUiThread(new Runnable() {
-
             @Override
             public void run() {
                 if (ContextCompat.checkSelfPermission(mContext, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -124,6 +119,8 @@ public class Location implements GoogleApiClient.ConnectionCallbacks, GoogleApiC
                     notifyIntent.putExtra(LAST_LOCATION_LATITUDE, mLastLocation.getLatitude());
                     notifyIntent.putExtra(LAST_LOCATION_LONGITUDE, mLastLocation.getLongitude());
                     LocalBroadcastManager.getInstance(mContext).sendBroadcast(notifyIntent);
+                } else {
+                    System.out.print("LastLocation is Null!");
                 }
             }
         });
@@ -140,7 +137,9 @@ public class Location implements GoogleApiClient.ConnectionCallbacks, GoogleApiC
 
     @Override
     public void onConnectionSuspended(int arg0) {
-        mGoogleApiClient.connect();
+        if (!mGoogleApiClient.isConnected() || !mGoogleApiClient.isConnecting()) {
+            mGoogleApiClient.connect();
+        }
     }
 
     @Override

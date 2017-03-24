@@ -24,6 +24,7 @@ public class Bluetooth {
     public Bluetooth(Context context, Activity activity) {
         mContext = context;
         mActivity = activity;
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
     public void startBluetooth() {

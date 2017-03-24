@@ -42,6 +42,7 @@
             android:layout_width="100dp"
             android:layout_height="100dp"
             android:text="GPS"
+
             tools:layout_editor_absoluteX="16dp"
             tools:layout_editor_absoluteY="16dp" />
 
