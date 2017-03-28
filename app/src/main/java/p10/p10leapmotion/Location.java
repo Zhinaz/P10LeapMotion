@@ -19,8 +19,6 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
-import static android.R.attr.data;
-import static android.R.attr.targetActivity;
 import static p10.p10leapmotion.MainActivity.LAST_LOCATION_LATITUDE;
 import static p10.p10leapmotion.MainActivity.LAST_LOCATION_LONGITUDE;
 import static p10.p10leapmotion.MainActivity.LAST_LOCATION_SPEED;
@@ -33,10 +31,10 @@ public class Location implements GoogleApiClient.ConnectionCallbacks, GoogleApiC
     private static int FATEST_INTERVAL = 4000; // 5 sec
     private static int DISPLACEMENT = 5; // 10 meters
 
-    private LocationRequest mLocationRequest;
-    GoogleApiClient mGoogleApiClient;
-    private android.location.Location mLastLocation;
-    boolean mRequestingLocationUpdates = false;
+    public LocationRequest mLocationRequest;
+    public GoogleApiClient mGoogleApiClient;
+    public android.location.Location mLastLocation;
+    public boolean mRequestingLocationUpdates = false;
 
     private Context mContext;
     private Activity mActivity;
@@ -44,13 +42,6 @@ public class Location implements GoogleApiClient.ConnectionCallbacks, GoogleApiC
     public Location(Context context, Activity activity) {
         mContext = context;
         mActivity = activity;
-    }
-
-    protected void buildGoogleApiClient() {
-        mGoogleApiClient = new GoogleApiClient.Builder(mActivity)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API).build();
     }
 
     public boolean isGooglePlayServicesAvailable(Activity activity) {
@@ -65,7 +56,23 @@ public class Location implements GoogleApiClient.ConnectionCallbacks, GoogleApiC
         return true;
     }
 
-    protected void startLocationUpdates() {
+    public void buildGoogleApiClient() {
+        mGoogleApiClient = new GoogleApiClient.Builder(mActivity)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+    }
+
+    public void createLocationRequest() {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(UPDATE_INTERVAL);
+        mLocationRequest.setFastestInterval(FATEST_INTERVAL);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        mLocationRequest.setSmallestDisplacement(DISPLACEMENT); // 10 meters
+    }
+
+    public void startLocationUpdates() {
         mRequestingLocationUpdates = true;
         if (ContextCompat.checkSelfPermission(mContext, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             if (!ActivityCompat.shouldShowRequestPermissionRationale(mActivity, android.Manifest.permission.ACCESS_FINE_LOCATION)) {
@@ -75,29 +82,19 @@ public class Location implements GoogleApiClient.ConnectionCallbacks, GoogleApiC
         if (mGoogleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
         } else if (mGoogleApiClient.isConnecting()) {
-            System.out.print("%%%%%%%%%%%% GoogleApiClient is NOT connected %%%%%%%%%%%%%");
             Log.w("FeedbackApp", "GoogleApiClient is NOT connecting");
             Toast.makeText(mContext.getApplicationContext(), "GoogleApiClient is NOT connecting", Toast.LENGTH_LONG).show();
         } else {
-            System.out.print("%%%%%%%%%%%% GoogleApiClient is NOT connected %%%%%%%%%%%%%");
             Log.w("FeedbackApp", "GoogleApiClient is NOT connected");
             Toast.makeText(mContext.getApplicationContext(), "GoogleApiClient is NOT connected", Toast.LENGTH_LONG).show();
         }
     }
 
-    protected void stopLocationUpdates() {
+    public void stopLocationUpdates() {
         mRequestingLocationUpdates = false;
         if (mGoogleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
         }
-    }
-
-    protected void createLocationRequest() {
-        mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(UPDATE_INTERVAL);
-        mLocationRequest.setFastestInterval(FATEST_INTERVAL);
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        mLocationRequest.setSmallestDisplacement(DISPLACEMENT); // 10 meters
     }
 
     public void displayLocation() {

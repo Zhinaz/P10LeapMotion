@@ -1,6 +1,5 @@
 package p10.p10leapmotion;
 
-import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -44,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
         if (location.isGooglePlayServicesAvailable(this)) {
             location.buildGoogleApiClient();
             location.createLocationRequest();
-            location.startLocationUpdates();
+            //location.startLocationUpdates();
         }
 
         try {
@@ -71,7 +70,8 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onClick(View v) {
-                location.startLocationUpdates();
+                location.displayLocation();
+                //location.startLocationUpdates();
             }
         });
     }
@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
     public BroadcastReceiver alarmCalledReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            double locationSpeed = intent.getDoubleExtra(LAST_LOCATION_SPEED, -1);
+            float locationSpeed = intent.getFloatExtra(LAST_LOCATION_SPEED, -1);
             double locationLatitude = intent.getDoubleExtra(LAST_LOCATION_LATITUDE, 999);
             double locationLongitude = intent.getDoubleExtra(LAST_LOCATION_LONGITUDE, 999);
 
@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         location.isGooglePlayServicesAvailable(this);
-        if (location.mGoogleApiClient.isConnected() && location.mRequestingLocationUpdates) {
+        if (location.mGoogleApiClient.isConnected()) { //  && location.mRequestingLocationUpdates
             location.startLocationUpdates();
         }
     }
@@ -135,10 +135,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (!location.mGoogleApiClient.isConnected()) {
+        if (location.mRequestingLocationUpdates) {
             location.stopLocationUpdates();
         }
-
     }
-
 }
