@@ -1,7 +1,5 @@
 package p10.p10leapmotion;
 
-import android.app.Activity;
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Criteria;
@@ -9,7 +7,6 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.widget.Toast;
 
@@ -18,15 +15,15 @@ import static p10.p10leapmotion.MainActivity.LAST_LOCATION_LONGITUDE;
 import static p10.p10leapmotion.MainActivity.LAST_LOCATION_SPEED;
 import static p10.p10leapmotion.MainActivity.LOCATION_CHANGED;
 
-public class GPS extends Service implements LocationListener {
+public class GPS implements LocationListener {
 
+    public LocalBroadcastManager broadcaster;
+    public Boolean requestingLocations = false;
     private Context mContext;
     private Criteria criteria;
     private Location location;
-
-    LocationManager locationManager;
-    String provider;
-    LocalBroadcastManager broadcaster;
+    private LocationManager locationManager;
+    private String provider;
 
     public GPS(Context context) {
         mContext = context;
@@ -44,10 +41,12 @@ public class GPS extends Service implements LocationListener {
     }
 
     public void requestUpdates() {
+        requestingLocations = true;
         locationManager.requestLocationUpdates(provider, 400, 1, this);
     }
 
     public void stopUpdates() {
+        requestingLocations = false;
         locationManager.removeUpdates(this);
     }
 
@@ -56,8 +55,7 @@ public class GPS extends Service implements LocationListener {
         notifyIntent.putExtra(LAST_LOCATION_SPEED, location.getSpeed());
         notifyIntent.putExtra(LAST_LOCATION_LATITUDE, location.getLatitude());
         notifyIntent.putExtra(LAST_LOCATION_LONGITUDE, location.getLongitude());
-        broadcaster.sendBroadcast(notifyIntent);
-        //LocalBroadcastManager.getInstance(mContext).sendBroadcast(notifyIntent);
+        LocalBroadcastManager.getInstance(mContext).sendBroadcast(notifyIntent);
     }
 
     @Override
@@ -72,20 +70,13 @@ public class GPS extends Service implements LocationListener {
 
     @Override
     public void onProviderEnabled(String provider) {
-        Toast.makeText(this, "Enabled new provider " + provider,
+        Toast.makeText(mContext, "Enabled new provider " + provider,
                 Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onProviderDisabled(String provider) {
-        Toast.makeText(this, "Disabled provider " + provider,
+        Toast.makeText(mContext, "Disabled provider " + provider,
                 Toast.LENGTH_SHORT).show();
     }
-
-    @Override
-    public IBinder onBind(Intent intent)
-    {
-        return null;
-    }
-
 }

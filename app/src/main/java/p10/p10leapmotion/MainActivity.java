@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -24,9 +25,6 @@ public class MainActivity extends AppCompatActivity {
     GPS gps;
     Bluetooth bluetooth;
 
-    public BroadcastReceiver bluetoothReceiver;
-    public BroadcastReceiver gpsReceiver;
-
     public static final String LOCATION_CHANGED = "LOCATION_CHANGED";
     public static final String LAST_LOCATION_SPEED = "LAST_LOCATION_SPEED";
     public static final String LAST_LOCATION_LONGITUDE = "LAST_LOCATION_LONGITUDE";
@@ -41,6 +39,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initialiseComponents();
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(gpsReceiver, new IntentFilter(LOCATION_CHANGED));
+        LocalBroadcastManager.getInstance(this).registerReceiver(bluetoothReceiver, new IntentFilter(BLUETOOTH_PAIRED_DEVICES));
 
         try {
             bluetooth.startBluetooth();
@@ -58,41 +59,39 @@ public class MainActivity extends AppCompatActivity {
         gps = new GPS(this);
         bluetooth = new Bluetooth(this,this);
         adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, bluetoothDevices);
-
-        //LocalBroadcastManager.getInstance(this).registerReceiver(gpsReceiver, new IntentFilter(LOCATION_CHANGED));
-        //LocalBroadcastManager.getInstance(this).registerReceiver(bluetoothReceiver, new IntentFilter(BLUETOOTH_PAIRED_DEVICES));
-
-        bluetoothReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                bluetoothDevices = intent.getStringArrayListExtra(BLUETOOTH_PAIRED_DEVICES);
-                if(!bluetoothDevices.isEmpty()) {
-                    lst_btdevices.setAdapter(adapter);
-                }
-            }
-        };
-
-        gpsReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                float locationSpeed = intent.getFloatExtra(LAST_LOCATION_SPEED, -1);
-                double locationLatitude = intent.getDoubleExtra(LAST_LOCATION_LATITUDE, 999);
-                double locationLongitude = intent.getDoubleExtra(LAST_LOCATION_LONGITUDE, 999);
-
-                if (locationLatitude == 999 || locationLongitude == 999) {
-                    txt_location.setText("error, error");
-                } else {
-                    txt_location.setText(String.valueOf(locationLatitude) + ", " + String.valueOf(locationLongitude));
-                }
-            }
-        };
     }
+
+    public BroadcastReceiver bluetoothReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            bluetoothDevices = intent.getStringArrayListExtra(BLUETOOTH_PAIRED_DEVICES);
+            if(!bluetoothDevices.isEmpty()) {
+                lst_btdevices.setAdapter(adapter);
+            }
+        }
+    };
+
+    public BroadcastReceiver gpsReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            float locationSpeed = intent.getFloatExtra(LAST_LOCATION_SPEED, -1);
+            double locationLatitude = intent.getDoubleExtra(LAST_LOCATION_LATITUDE, 999);
+            double locationLongitude = intent.getDoubleExtra(LAST_LOCATION_LONGITUDE, 999);
+
+            if (locationLatitude == 999 || locationLongitude == 999) {
+                txt_location.setText("error, error");
+            } else {
+                txt_location.setText(String.valueOf(locationLatitude) + ", " + String.valueOf(locationLongitude));
+            }
+        }
+    };
 
     @Override
     protected void onStart() {
         super.onStart();
-        LocalBroadcastManager.getInstance(this).registerReceiver(gpsReceiver, new IntentFilter(LOCATION_CHANGED));
-        LocalBroadcastManager.getInstance(this).registerReceiver(bluetoothReceiver, new IntentFilter(BLUETOOTH_PAIRED_DEVICES));
+
+        gps.requestUpdates();
+
         if (!bluetooth.mBluetoothAdapter.isEnabled()) {
             bluetooth.startBluetooth();
         }
@@ -101,7 +100,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
-        gps.requestUpdates();
     }
 
     @Override
@@ -109,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
         if (bluetooth.mBluetoothAdapter.isEnabled()) {
             bluetooth.stopBluetooth();
         }
+        gps.stopUpdates();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(gpsReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(bluetoothReceiver);
         super.onStop();
@@ -117,6 +116,5 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        gps.stopUpdates();
     }
 }
