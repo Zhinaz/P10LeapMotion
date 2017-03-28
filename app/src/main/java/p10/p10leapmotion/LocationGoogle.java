@@ -24,9 +24,9 @@ import static p10.p10leapmotion.MainActivity.LAST_LOCATION_LONGITUDE;
 import static p10.p10leapmotion.MainActivity.LAST_LOCATION_SPEED;
 import static p10.p10leapmotion.MainActivity.LOCATION_CHANGED;
 
-public class Location implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
+public class LocationGoogle implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
-    // Location updates intervals in sec
+    // LocationGoogle updates intervals in sec
     private static int UPDATE_INTERVAL = 80000; // 10 sec
     private static int FATEST_INTERVAL = 4000; // 5 sec
     private static int DISPLACEMENT = 5; // 10 meters
@@ -39,7 +39,7 @@ public class Location implements GoogleApiClient.ConnectionCallbacks, GoogleApiC
     private Context mContext;
     private Activity mActivity;
 
-    public Location(Context context, Activity activity) {
+    public LocationGoogle(Context context, Activity activity) {
         mContext = context;
         mActivity = activity;
     }
