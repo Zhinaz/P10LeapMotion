@@ -25,32 +25,8 @@ public class GPS implements LocationListener {
     private LocationManager locationManager;
     private String provider;
 
-    public GPS(Context context) {
-        mContext = context;
-
-        locationManager = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
-
-        criteria = new Criteria();
-        provider = locationManager.getBestProvider(criteria, false);
-        location = locationManager.getLastKnownLocation(provider);
-        broadcaster = LocalBroadcastManager.getInstance(mContext);
-
-        if (location != null) {
-            onLocationChanged(location);
-        }
-    }
-
-    public void requestUpdates() {
-        requestingLocations = true;
-        locationManager.requestLocationUpdates(provider, 400, 1, this);
-    }
-
-    public void stopUpdates() {
-        requestingLocations = false;
-        locationManager.removeUpdates(this);
-    }
-
     public void updateDisplay(Location location) {
+        System.out.println("UpdateDisplay");
         Intent notifyIntent = new Intent(LOCATION_CHANGED);
         notifyIntent.putExtra(LAST_LOCATION_SPEED, location.getSpeed());
         notifyIntent.putExtra(LAST_LOCATION_LATITUDE, location.getLatitude());
@@ -60,6 +36,7 @@ public class GPS implements LocationListener {
 
     @Override
     public void onLocationChanged(Location location) {
+        System.out.println("onLocationChanged");
         updateDisplay(location);
     }
 
