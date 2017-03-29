@@ -1,5 +1,6 @@
 package p10.p10leapmotion;
 
+import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -23,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
     ListView lst_btdevices;
 
     Bluetooth bluetooth;
+    ConnectBluetooth connectBluetooth;
 
     public static final String LOCATION_CHANGED = "LOCATION_CHANGED";
     public static final String LAST_LOCATION_SPEED = "LAST_LOCATION_SPEED";
@@ -30,7 +32,8 @@ public class MainActivity extends AppCompatActivity {
     public static final String LAST_LOCATION_LATITUDE = "LAST_LOCATION_LATITUDE";
     public static final String BLUETOOTH_PAIRED_DEVICES = "BLUETOOTH_PAIRED_DEVICES";
 
-    ArrayList bluetoothDevices;
+    //ArrayList bluetoothDevices;
+    ArrayList<String> bluetoothDevices = new ArrayList<>();
     ArrayAdapter adapter;
 
     private LocationManager locationManager;
@@ -53,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        bluetooth.publicBluetooth();
         bluetooth.updateBluetoothList();
     }
 
@@ -80,6 +84,7 @@ public class MainActivity extends AppCompatActivity {
             if(!bluetoothDevices.isEmpty()) {
                 lst_btdevices.setAdapter(adapter);
             }
+            //connectBluetooth = new ConnectBluetooth(bluetoothDevices.get(0), bluetooth.mBluetoothAdapter);
         }
     };
 

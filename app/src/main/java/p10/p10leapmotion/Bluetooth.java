@@ -3,13 +3,16 @@ package p10.p10leapmotion;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.content.LocalBroadcastManager;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.UUID;
 
 import static p10.p10leapmotion.MainActivity.BLUETOOTH_PAIRED_DEVICES;
 
@@ -49,14 +52,17 @@ public class Bluetooth {
 
     public void updateBluetoothList() {
         pairedDevices = mBluetoothAdapter.getBondedDevices();
-        ArrayList list = new ArrayList();
+        ArrayList<String> list = new ArrayList<>();
 
         for (BluetoothDevice bt : pairedDevices){
-            list.add(bt.getName());
+            list.add(bt.getAddress());
         }
 
         Intent notifyIntent = new Intent(BLUETOOTH_PAIRED_DEVICES);
-        notifyIntent.putStringArrayListExtra(BLUETOOTH_PAIRED_DEVICES, list);
+        if (!list.isEmpty()) {
+            notifyIntent.putStringArrayListExtra(BLUETOOTH_PAIRED_DEVICES, list);
+        }
         LocalBroadcastManager.getInstance(mContext).sendBroadcast(notifyIntent);
     }
 }
+
