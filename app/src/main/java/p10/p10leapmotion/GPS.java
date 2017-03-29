@@ -17,13 +17,7 @@ import static p10.p10leapmotion.MainActivity.LOCATION_CHANGED;
 
 public class GPS implements LocationListener {
 
-    public LocalBroadcastManager broadcaster;
-    public Boolean requestingLocations = false;
     private Context mContext;
-    private Criteria criteria;
-    private Location location;
-    private LocationManager locationManager;
-    private String provider;
 
     public void updateDisplay(Location location) {
         System.out.println("UpdateDisplay");
