@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity {
 
     // UI Elements
     public TextView txt_location;
-    ListView lst_btdevices;
+    public TextView txt_pairedDevices;
 
     Bluetooth bluetooth;
     ConnectBluetooth connectBluetooth;
@@ -34,7 +34,6 @@ public class MainActivity extends AppCompatActivity {
 
     //ArrayList bluetoothDevices;
     ArrayList<String> bluetoothDevices = new ArrayList<>();
-    ArrayAdapter adapter;
 
     private LocationManager locationManager;
     private LocationListener locationListener;
@@ -56,17 +55,16 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        bluetooth.publicBluetooth();
+        //bluetooth.publicBluetooth();
         bluetooth.updateBluetoothList();
     }
 
     private void initialiseComponents() {
         // UI Elements
         txt_location = (TextView)findViewById(R.id.txt_location);
-        lst_btdevices = (ListView)findViewById(R.id.lst_btdevices);
+        txt_pairedDevices = (TextView)findViewById(R.id.txt_pairedDevices);
 
         bluetooth = new Bluetooth(this,this);
-        adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, bluetoothDevices);
     }
 
     public void requestGPSLocationUpdates() {
@@ -81,8 +79,15 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             bluetoothDevices = intent.getStringArrayListExtra(BLUETOOTH_PAIRED_DEVICES);
-            if(!bluetoothDevices.isEmpty()) {
-                lst_btdevices.setAdapter(adapter);
+            if(bluetoothDevices != null) {
+                System.out.println("Listview adapter is set: " + bluetoothDevices.get(0));
+                String pairedDevices = "";
+                for (String device : bluetoothDevices) {
+                    pairedDevices = pairedDevices + device + " ";
+                }
+                txt_pairedDevices.setText(pairedDevices);
+            } else {
+                System.out.println("bluetoothDevices is null");
             }
             //connectBluetooth = new ConnectBluetooth(bluetoothDevices.get(0), bluetooth.mBluetoothAdapter);
         }
@@ -91,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
     public BroadcastReceiver gpsReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            System.out.println("gpsReceiver!");
+            System.out.println("gpsReceiver");
             float locationSpeed = intent.getFloatExtra(LAST_LOCATION_SPEED, -1);
             double locationLatitude = intent.getDoubleExtra(LAST_LOCATION_LATITUDE, 999);
             double locationLongitude = intent.getDoubleExtra(LAST_LOCATION_LONGITUDE, 999);
@@ -139,5 +144,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        if (bluetooth.mBluetoothAdapter.isEnabled()) {
+            bluetooth.stopBluetooth();
+        }
     }
 }

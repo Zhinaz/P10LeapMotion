@@ -51,10 +51,11 @@
             android:layout_height="wrap_content"
             tools:text="Location" />
 
-        <ListView
-            android:id="@+id/lst_btdevices"
+        <TextView
+            android:id="@+id/txt_pairedDevices"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="wrap_content"
+            tools:text="Paired devices" />
 
     </LinearLayout>
 
