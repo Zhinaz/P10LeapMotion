@@ -30,6 +30,10 @@ public class Bluetooth {
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
+    public BluetoothDevice getFirstDevice() {
+        return pairedDevices.iterator().next();
+    }
+
     public void startBluetooth() {
         if (!mBluetoothAdapter.isEnabled()) {
             Intent enableBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);

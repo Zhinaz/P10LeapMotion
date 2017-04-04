@@ -16,6 +16,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -82,14 +83,17 @@ public class MainActivity extends AppCompatActivity {
             if(bluetoothDevices != null) {
                 System.out.println("Listview adapter is set: " + bluetoothDevices.get(0));
                 String pairedDevices = "";
+
                 for (String device : bluetoothDevices) {
                     pairedDevices = pairedDevices + device + " ";
+                    connectBluetooth = new ConnectBluetooth(bluetooth.getFirstDevice(), bluetooth.mBluetoothAdapter);
+                    connectBluetooth.run();
                 }
                 txt_pairedDevices.setText(pairedDevices);
+
             } else {
                 System.out.println("bluetoothDevices is null");
             }
-            //connectBluetooth = new ConnectBluetooth(bluetoothDevices.get(0), bluetooth.mBluetoothAdapter);
         }
     };
 
