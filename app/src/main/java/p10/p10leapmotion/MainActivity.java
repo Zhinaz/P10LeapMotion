@@ -1,9 +1,11 @@
 package p10.p10leapmotion;
 
+import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.LocationListener;
@@ -11,18 +13,16 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -32,9 +32,7 @@ public class MainActivity extends AppCompatActivity {
     public TextView txt_pairedDevices;
 
     public Button test_button;
-
-    Bluetooth bluetooth;
-    //ConnectBluetooth connectBluetooth;
+    public Button radio_button;
 
     public static final String LOCATION_CHANGED = "LOCATION_CHANGED";
     public static final String LAST_LOCATION_SPEED = "LAST_LOCATION_SPEED";
@@ -50,9 +48,6 @@ public class MainActivity extends AppCompatActivity {
     public final static int MESSAGE_READ = 1340;
     public final static int MESSAGE_WRITE = 1341;
 
-    //ArrayList bluetoothDevices;
-    ArrayList<String> bluetoothDevices = new ArrayList<>();
-
     private LocationManager locationManager;
     private LocationListener locationListener;
 
@@ -60,6 +55,8 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter mBluetoothAdapter = null;
     private String mConnectedDeviceName = null;
 
+    ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
+    ArrayAdapter<BluetoothDevice> pairedDeviceAdapter = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,136 +65,34 @@ public class MainActivity extends AppCompatActivity {
         initialiseComponents();
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
         if (mBluetoothAdapter == null) {
             Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG);
         }
+
+        if (!mBluetoothAdapter.isEnabled()) {
+            Intent enableBluetoothIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBluetoothIntent, REQUEST_ENABLE_BT);
+        }
+
+        pairedDevices.addAll(mBluetoothAdapter.getBondedDevices());
+
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(bluetoothReceiver, filter);
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         locationListener = new GPS();
 
         LocalBroadcastManager.getInstance(this).registerReceiver(gpsReceiver, new IntentFilter(LOCATION_CHANGED));
-        LocalBroadcastManager.getInstance(this).registerReceiver(bluetoothReceiver, new IntentFilter(BLUETOOTH_PAIRED_DEVICES));
 
         // Make device discoverable
         ensureDiscoverable();
-
-        /*
-        try {
-            bluetooth.startBluetooth();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        bluetooth.updateBluetoothList();
-        */
-
-        try {
-            bluetooth.startBluetooth();
-            bluetooth.publicBluetooth();
-            bluetooth.updateBluetoothList();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
     }
-
-    private void initialiseComponents() {
-        // UI Elements
-        txt_location = (TextView)findViewById(R.id.txt_location);
-        txt_pairedDevices = (TextView)findViewById(R.id.txt_pairedDevices);
-        test_button = (Button)findViewById(R.id.btn_media);
-        test_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                sendMessage("Hård pik på alle måder!");
-            }
-        });
-
-        //bluetooth = new Bluetooth(this,this);
-    }
-
-    public void requestGPSLocationUpdates() {
-        locationManager.requestLocationUpdates(
-                LocationManager.NETWORK_PROVIDER,
-                0,
-                0,
-                locationListener);
-    }
-
-    private void ensureDiscoverable() {
-        if (mBluetoothAdapter.getScanMode() !=
-                BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
-            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
-            startActivity(discoverableIntent);
-        }
-    }
-
-
-    public BroadcastReceiver bluetoothReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            bluetoothDevices = intent.getStringArrayListExtra(BLUETOOTH_PAIRED_DEVICES);
-            if(bluetoothDevices != null) {
-                System.out.println("Listview adapter is set: " + bluetoothDevices.get(0));
-                String pairedDevices = "";
-
-                for (String d : bluetoothDevices) {
-                    pairedDevices = pairedDevices + d + " ";
-                    //connectBluetooth = new ConnectBluetooth(bluetooth.getFirstDevice(), bluetooth.mBluetoothAdapter);
-                    //connectBluetooth.run();
-
-                    mBluetoothServices.connect(bluetooth.getFirstDevice(), false);
-                }
-                txt_pairedDevices.setText(pairedDevices);
-
-            } else {
-                System.out.println("bluetoothDevices is null");
-            }
-        }
-    };
-
-    /**
-     * Establish connection with other device
-     *
-     * @param data   An {@link Intent} with extra.
-     * @param secure Socket Security type - Secure (true) , Insecure (false)
-     */
-    private void connectDevice(Intent data, boolean secure) {
-        // Get the device MAC address
-        String address = data.getExtras().getString("EXTRA_DEVICE_ADDRESS");
-        // Get the BluetoothDevice object
-        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-        // Attempt to connect to the device
-        mBluetoothServices.connect(device, secure);
-    }
-
-    public BroadcastReceiver gpsReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            System.out.println("gpsReceiver");
-            float locationSpeed = intent.getFloatExtra(LAST_LOCATION_SPEED, -1);
-            double locationLatitude = intent.getDoubleExtra(LAST_LOCATION_LATITUDE, 999);
-            double locationLongitude = intent.getDoubleExtra(LAST_LOCATION_LONGITUDE, 999);
-
-            if (locationLatitude == 999 || locationLongitude == 999) {
-                txt_location.setText("error, error");
-            } else {
-                txt_location.setText(String.valueOf(locationLatitude) + ", " + String.valueOf(locationLongitude));
-            }
-        }
-    };
 
     @Override
     protected void onStart() {
         super.onStart();
 
         requestGPSLocationUpdates();
-
-        /*if (!bluetooth.mBluetoothAdapter.isEnabled()) {
-            bluetooth.startBluetooth();
-        }*/
 
         if (!mBluetoothAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -221,9 +116,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        /*if (bluetooth.mBluetoothAdapter.isEnabled()) {
-            bluetooth.stopBluetooth();
-        }*/
         locationManager.removeUpdates(locationListener);
     }
 
@@ -231,7 +123,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(gpsReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(bluetoothReceiver);
+
+        unregisterReceiver(bluetoothReceiver);
 
         if (mBluetoothServices != null) {
             mBluetoothServices.stop();
@@ -241,9 +134,110 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        /*if (bluetooth.mBluetoothAdapter.isEnabled()) {
-            bluetooth.stopBluetooth();
-        }*/
+    }
+
+    private void initialiseComponents() {
+        // UI Elements
+        txt_location = (TextView)findViewById(R.id.txt_location);
+        txt_pairedDevices = (TextView)findViewById(R.id.txt_pairedDevices);
+        test_button = (Button)findViewById(R.id.btn_media);
+        test_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendMessage("Hård pik på alle måder!");
+            }
+        });
+        radio_button = (Button)findViewById(R.id.btn_radio);
+        radio_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                chooseBluetoothDevice();
+                //connectDevice(false);
+            }
+        });
+    }
+
+    // Start Location section
+    public void requestGPSLocationUpdates() {
+        locationManager.requestLocationUpdates(
+                LocationManager.NETWORK_PROVIDER,
+                0,
+                0,
+                locationListener);
+    }
+
+    public BroadcastReceiver gpsReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            System.out.println("gpsReceiver");
+            float locationSpeed = intent.getFloatExtra(LAST_LOCATION_SPEED, -1);
+            double locationLatitude = intent.getDoubleExtra(LAST_LOCATION_LATITUDE, 999);
+            double locationLongitude = intent.getDoubleExtra(LAST_LOCATION_LONGITUDE, 999);
+
+            if (locationLatitude == 999 || locationLongitude == 999) {
+                txt_location.setText("error, error");
+            } else {
+                txt_location.setText(String.valueOf(locationLatitude) + ", " + String.valueOf(locationLongitude));
+            }
+        }
+    };
+    // end location section
+
+    // Start bluetooth section
+    // Create a BroadcastReceiver for ACTION_FOUND.
+    private final BroadcastReceiver bluetoothReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                // Discovery has found a device. Get the BluetoothDevice
+                // object and its info from the Intent.
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                String deviceName = device.getName();
+                String deviceHardwareAddress = device.getAddress(); // MAC address
+            }
+        }
+    };
+
+    private void ensureDiscoverable() {
+        if (mBluetoothAdapter.getScanMode() !=
+                BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+            startActivity(discoverableIntent);
+        }
+    }
+
+    /**
+     * Establish connection with other device
+     * @param secure Socket Security type - Secure (true) , Insecure (false)
+     */
+    private void connectDevice(int deviceNumber, boolean secure) {
+        if (pairedDevices.size() > 0) {
+            String deviceAddress = pairedDevices.get(deviceNumber).getAddress();
+            BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(deviceAddress);
+            mBluetoothServices.connect(device, false);
+        }
+    }
+
+    // Create dialog to choose bluetooth device - Only paired devices show up!
+    public Dialog chooseBluetoothDevice() {
+        ArrayList<String> tempList = new ArrayList<>();
+        for (BluetoothDevice bluetoothDevice : pairedDevices) {
+            tempList.add(bluetoothDevice.getName());
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Choose Bluetooth device");
+        builder.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_single_choice, tempList), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                        connectDevice(i, false);
+                    }
+                });
+        AlertDialog alert = builder.create();
+        alert.show();
+        return builder.create();
     }
 
     // Send a message to connected bluetooth device
@@ -295,7 +289,7 @@ public class MainActivity extends AppCompatActivity {
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
                     System.out.println(mConnectedDeviceName + ":  " + readMessage);
-                    test_button.setText(readMessage);
+                    Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
                     break;
                 case MESSAGE_DEVICE_NAME:
                     // save the connected device's name
