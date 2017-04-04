@@ -13,7 +13,6 @@ public class ConnectBluetooth extends Thread {
     private final BluetoothSocket mSocket;
     private BluetoothAdapter mBluetoothAdapter;
     private MessageBluetooth messageBluetooth;
-    private Thread btThread;
     private static final UUID uuid = UUID.fromString("951753");
 
     public ConnectBluetooth(BluetoothDevice device, BluetoothAdapter bluetoothAdapter) {
@@ -52,13 +51,13 @@ public class ConnectBluetooth extends Thread {
         // The connection attempt succeeded. Perform work associated with
         // the connection in a separate thread.
 
-        if (btThread != null) {
-            btThread.stop();
-            btThread = null;
+        if (messageBluetooth != null) {
+            messageBluetooth.cancel();
+            messageBluetooth = null;
         }
 
-        btThread = new MessageBluetooth(mSocket);
-        btThread.start();
+        messageBluetooth = new MessageBluetooth(mSocket);
+        messageBluetooth.start();
     }
 
     // Closes the client socket and causes the thread to finish.
