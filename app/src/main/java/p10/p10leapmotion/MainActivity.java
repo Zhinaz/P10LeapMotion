@@ -16,6 +16,9 @@ import android.os.Message;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -30,7 +33,6 @@ public class MainActivity extends AppCompatActivity {
     // UI Elements
     public TextView txt_location;
     public TextView txt_pairedDevices;
-
     public Button test_button;
     public Button radio_button;
 
@@ -83,9 +85,6 @@ public class MainActivity extends AppCompatActivity {
         locationListener = new GPS();
 
         LocalBroadcastManager.getInstance(this).registerReceiver(gpsReceiver, new IntentFilter(LOCATION_CHANGED));
-
-        // Make device discoverable
-        ensureDiscoverable();
     }
 
     @Override
@@ -151,10 +150,32 @@ public class MainActivity extends AppCompatActivity {
         radio_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                chooseBluetoothDevice();
+
                 //connectDevice(false);
             }
         });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.options_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case R.id.connect:
+                chooseBluetoothDevice();
+                return true;
+            case R.id.discover:
+                ensureDiscoverable();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     // Start Location section
@@ -240,7 +261,7 @@ public class MainActivity extends AppCompatActivity {
         return builder.create();
     }
 
-    // Send a message to connected bluetooth device
+    // Send a message to connected bluetooth device8
     private void sendMessage(String message) {
         // Check that we're actually connected before trying anything
         if (mBluetoothServices.getState() != BluetoothServices.STATE_CONNECTED) {
