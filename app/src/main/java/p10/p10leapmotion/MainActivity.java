@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -25,6 +26,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.net.URL;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
@@ -35,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     public TextView txt_pairedDevices;
     public Button test_button;
     public Button radio_button;
+    public GifImageView gifImageView;
 
     public static final String LOCATION_CHANGED = "LOCATION_CHANGED";
     public static final String LAST_LOCATION_SPEED = "LAST_LOCATION_SPEED";
@@ -116,6 +119,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         locationManager.removeUpdates(locationListener);
+        if (mBluetoothServices != null) {
+            mBluetoothServices.stop();
+        }
     }
 
     @Override
@@ -154,6 +160,7 @@ public class MainActivity extends AppCompatActivity {
                 //connectDevice(false);
             }
         });
+        gifImageView = (GifImageView) findViewById(R.id.GifImageView);
     }
 
     @Override
@@ -175,6 +182,35 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    // ASyncTask for update UI  // new ImageViewTask().execute(warning, null, null);
+    private class ImageViewTask extends AsyncTask<Integer, Void, Void> {
+        protected void onPreExecute() {
+            gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
+        }
+
+        protected Void doInBackground(Integer... params) {
+
+            Integer warning = params[0];
+            switch (warning) {
+                case 0:
+                    break;
+                case 1:
+                    break;
+                case 2:
+                    break;
+                case 3:
+                    break;
+                case 4:
+                    break;
+            }
+            return null;
+        }
+
+        protected void onPostExecute(Void result) {
+            // Show closing gif
         }
     }
 

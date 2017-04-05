@@ -26,7 +26,8 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyB0ThpI7OeuUnrCQVUIjvs4pZeyjfeKFmE"/>
         <activity android:name=".MainActivity"
-            android:screenOrientation="sensorLandscape">
+            android:screenOrientation="sensorLandscape"
+            android:hardwareAccelerated="false">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
