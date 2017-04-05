@@ -26,7 +26,6 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.net.URL;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
@@ -35,8 +34,9 @@ public class MainActivity extends AppCompatActivity {
     // UI Elements
     public TextView txt_location;
     public TextView txt_pairedDevices;
-    public Button test_button;
+    public Button media_button;
     public Button radio_button;
+    public Button gps_button;
     public GifImageView gifImageView;
 
     public static final String LOCATION_CHANGED = "LOCATION_CHANGED";
@@ -141,28 +141,6 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
     }
 
-    private void initialiseComponents() {
-        // UI Elements
-        txt_location = (TextView)findViewById(R.id.txt_location);
-        txt_pairedDevices = (TextView)findViewById(R.id.txt_pairedDevices);
-        test_button = (Button)findViewById(R.id.btn_media);
-        test_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                sendMessage("Hård pik på alle måder!");
-            }
-        });
-        radio_button = (Button)findViewById(R.id.btn_radio);
-        radio_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                //connectDevice(false);
-            }
-        });
-        gifImageView = (GifImageView) findViewById(R.id.GifImageView);
-    }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -183,6 +161,34 @@ public class MainActivity extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void initialiseComponents() {
+        // UI Elements
+        txt_location = (TextView)findViewById(R.id.txt_location);
+        txt_pairedDevices = (TextView)findViewById(R.id.txt_pairedDevices);
+        media_button = (Button)findViewById(R.id.btn_media);
+        media_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendMessage("Hård pik på alle måder!");
+            }
+        });
+        radio_button = (Button)findViewById(R.id.btn_radio);
+        radio_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
+            }
+        });
+        gps_button = (Button)findViewById(R.id.btn_gps);
+        gps_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                gifImageView.setGifImageResource(R.drawable.cats);
+            }
+        });
+        gifImageView = (GifImageView) findViewById(R.id.GifImageView);
     }
 
     // ASyncTask for update UI  // new ImageViewTask().execute(warning, null, null);
