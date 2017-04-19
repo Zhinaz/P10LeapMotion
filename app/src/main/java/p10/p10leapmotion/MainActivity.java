@@ -31,6 +31,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Queue;
+
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.w3c.dom.Node;
 
@@ -67,8 +68,8 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter mBluetoothAdapter = null;
     private String mConnectedDeviceName = null;
 
-    ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
-    Queue<String> stateQueue = new CircularFifoQueue<>(4);
+    private ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
+    private Queue<String> stateQueue = new CircularFifoQueue<>(4);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -176,9 +177,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void initialiseComponents() {
         // UI Elements
-        txt_location = (TextView)findViewById(R.id.txt_location);
-        txt_pairedDevices = (TextView)findViewById(R.id.txt_pairedDevices);
-        media_button = (Button)findViewById(R.id.btn_media);
+        txt_location = (TextView) findViewById(R.id.txt_location);
+        txt_pairedDevices = (TextView) findViewById(R.id.txt_pairedDevices);
+        media_button = (Button) findViewById(R.id.btn_media);
         media_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -186,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        radio_button = (Button)findViewById(R.id.btn_radio);
+        radio_button = (Button) findViewById(R.id.btn_radio);
         radio_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -194,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        gps_button = (Button)findViewById(R.id.btn_gps);
+        gps_button = (Button) findViewById(R.id.btn_gps);
         gps_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -207,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
         textToSpeech = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
-                if(status != TextToSpeech.ERROR) {
+                if (status != TextToSpeech.ERROR) {
                     textToSpeech.setLanguage(Locale.UK);
                 }
             }
@@ -266,6 +267,7 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Establish connection with other device
+     *
      * @param secure Socket Security type - Secure (true) , Insecure (false)
      */
     private void connectDevice(int deviceNumber, boolean secure) {
@@ -286,12 +288,12 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Choose Bluetooth device");
         builder.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_single_choice, tempList), new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        dialogInterface.dismiss();
-                        connectDevice(i, false);
-                    }
-                });
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+                connectDevice(i, false);
+            }
+        });
         AlertDialog alert = builder.create();
         alert.show();
         return builder.create();
