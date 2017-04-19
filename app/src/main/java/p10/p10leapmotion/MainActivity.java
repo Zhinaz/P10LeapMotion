@@ -115,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
-
+        setupTextToSpeech();
         if (mBluetoothServices != null) {
             if (mBluetoothServices.getState() == BluetoothServices.STATE_NONE) {
                 mBluetoothServices.start();
@@ -205,6 +205,10 @@ public class MainActivity extends AppCompatActivity {
 
         gifImageView = (GifImageView) findViewById(R.id.GifImageView);
 
+        setupTextToSpeech();
+    }
+
+    private void setupTextToSpeech() {
         textToSpeech = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
@@ -331,7 +335,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void warnDriver() {
-        String textMessage = "Be attentive, you dumb fuck";
+        String textMessage = "Be attentive";
 
         // Set Image / GIF
         new ImageViewTask().execute();
@@ -360,7 +364,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         protected void onPostExecute(Void result) {
-            gifImageView.setGifImageResource(0);
+            gifImageView.setGifImageResource(R.drawable.empty);
         }
     }
 
