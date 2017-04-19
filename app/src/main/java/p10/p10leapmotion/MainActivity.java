@@ -179,7 +179,11 @@ public class MainActivity extends AppCompatActivity {
         media_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                sendMessage("Hård pik på alle måder!");
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    textToSpeech.speak("Look at this", TextToSpeech.QUEUE_FLUSH, null, null);
+                } else {
+                    textToSpeech.speak("This is nice", TextToSpeech.QUEUE_FLUSH, null);
+                }
             }
         });
 
