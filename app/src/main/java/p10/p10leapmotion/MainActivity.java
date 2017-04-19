@@ -318,9 +318,9 @@ public class MainActivity extends AppCompatActivity {
     private void addToStateList(String readMessage) {
         stateQueue.add(readMessage);
         int sameState = 0;
-        if (stateQueue.size() == 4) {
+        if (stateQueue.size() >= 4) {
             for (String state : stateQueue) {
-                if (state == "INATTENTIVE") {
+                if (state.equals("INATTENTIVE")) {
                     sameState++;
                 }
             }
