@@ -11,9 +11,11 @@ import android.content.IntentFilter;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.speech.tts.TextToSpeech;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -27,6 +29,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -55,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
 
     private LocationManager locationManager;
     private LocationListener locationListener;
+    private TextToSpeech textToSpeech;
 
     private BluetoothServices mBluetoothServices = null;
     private BluetoothAdapter mBluetoothAdapter = null;
@@ -138,6 +142,10 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
+        if (textToSpeech != null) {
+            textToSpeech.stop();
+            textToSpeech.shutdown();
+        }
         super.onPause();
     }
 
@@ -174,6 +182,7 @@ public class MainActivity extends AppCompatActivity {
                 sendMessage("Hård pik på alle måder!");
             }
         });
+
         radio_button = (Button)findViewById(R.id.btn_radio);
         radio_button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -181,6 +190,7 @@ public class MainActivity extends AppCompatActivity {
                 gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
             }
         });
+
         gps_button = (Button)findViewById(R.id.btn_gps);
         gps_button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -188,7 +198,17 @@ public class MainActivity extends AppCompatActivity {
                 gifImageView.setGifImageResource(R.drawable.cats);
             }
         });
+
         gifImageView = (GifImageView) findViewById(R.id.GifImageView);
+
+        textToSpeech = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if(status != TextToSpeech.ERROR) {
+                    textToSpeech.setLanguage(Locale.UK);
+                }
+            }
+        });
     }
 
     // ASyncTask for update UI  // new ImageViewTask().execute(warning, null, null);
@@ -345,7 +365,7 @@ public class MainActivity extends AppCompatActivity {
                     byte[] writeBuf = (byte[]) msg.obj;
                     // construct a string from the buffer
                     String writeMessage = new String(writeBuf);
-                    System.out.println("Me:  " + writeMessage);
+                    System.out.println("Me: " + writeMessage);
                     break;
                 case MESSAGE_READ:
                     byte[] readBuf = (byte[]) msg.obj;
@@ -353,6 +373,13 @@ public class MainActivity extends AppCompatActivity {
                     String readMessage = new String(readBuf, 0, msg.arg1);
                     System.out.println(mConnectedDeviceName + ":  " + readMessage);
                     Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        textToSpeech.speak(readMessage, TextToSpeech.QUEUE_FLUSH, null, null);
+                    } else {
+                        textToSpeech.speak(readMessage, TextToSpeech.QUEUE_FLUSH, null);
+                    }
+
                     break;
                 case MESSAGE_DEVICE_NAME:
                     // save the connected device's name
