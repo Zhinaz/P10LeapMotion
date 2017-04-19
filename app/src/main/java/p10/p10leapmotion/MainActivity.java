@@ -30,6 +30,9 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Queue;
+import org.apache.commons.collections4.queue.CircularFifoQueue;
+import org.w3c.dom.Node;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -65,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
     private String mConnectedDeviceName = null;
 
     ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
-    ArrayAdapter<BluetoothDevice> pairedDeviceAdapter = null;
+    Queue<String> stateQueue = new CircularFifoQueue<>(4);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -142,11 +145,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
+        super.onPause();
         if (textToSpeech != null) {
             textToSpeech.stop();
             textToSpeech.shutdown();
         }
-        super.onPause();
     }
 
     @Override
@@ -179,11 +182,7 @@ public class MainActivity extends AppCompatActivity {
         media_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    textToSpeech.speak("Look at this", TextToSpeech.QUEUE_FLUSH, null, null);
-                } else {
-                    textToSpeech.speak("This is nice", TextToSpeech.QUEUE_FLUSH, null);
-                }
+                warnDriver();
             }
         });
 
@@ -213,35 +212,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-    }
-
-    // ASyncTask for update UI  // new ImageViewTask().execute(warning, null, null);
-    private class ImageViewTask extends AsyncTask<Integer, Void, Void> {
-        protected void onPreExecute() {
-            gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
-        }
-
-        protected Void doInBackground(Integer... params) {
-
-            Integer warning = params[0];
-            switch (warning) {
-                case 0:
-                    break;
-                case 1:
-                    break;
-                case 2:
-                    break;
-                case 3:
-                    break;
-                case 4:
-                    break;
-            }
-            return null;
-        }
-
-        protected void onPostExecute(Void result) {
-            // Show closing gif
-        }
     }
 
     // Start Location section
@@ -327,7 +297,7 @@ public class MainActivity extends AppCompatActivity {
         return builder.create();
     }
 
-    // Send a message to connected bluetooth device8
+    // Send a message to connected bluetooth device
     private void sendMessage(String message) {
         // Check that we're actually connected before trying anything
         if (mBluetoothServices.getState() != BluetoothServices.STATE_CONNECTED) {
@@ -340,6 +310,55 @@ public class MainActivity extends AppCompatActivity {
             // Get the message bytes and tell the BluetoothChatService to write
             byte[] send = message.getBytes();
             mBluetoothServices.write(send);
+        }
+    }
+
+    private void addToStateList(String readMessage) {
+        stateQueue.add(readMessage);
+        int sameState = 0;
+        if (stateQueue.size() == 4) {
+            for (String state : stateQueue) {
+                if (state == "INATTENTIVE") {
+                    sameState++;
+                }
+            }
+            if (sameState == 4) {
+                warnDriver();
+            }
+        }
+    }
+
+    private void warnDriver() {
+        String textMessage = "Be attentive, you dumb fuck";
+
+        // Set Image / GIF
+        new ImageViewTask().execute();
+
+        // Play warning sound
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            textToSpeech.speak(textMessage, TextToSpeech.QUEUE_FLUSH, null, null);
+        } else {
+            textToSpeech.speak(textMessage, TextToSpeech.QUEUE_FLUSH, null);
+        }
+    }
+
+    // ASyncTask for update UI  // new ImageViewTask().execute(warning, null, null);
+    private class ImageViewTask extends AsyncTask<Integer, Void, Void> {
+        protected void onPreExecute() {
+            gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
+        }
+
+        protected Void doInBackground(Integer... params) {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                Thread.interrupted();
+            }
+            return null;
+        }
+
+        protected void onPostExecute(Void result) {
+            gifImageView.setGifImageResource(0);
         }
     }
 
@@ -378,11 +397,7 @@ public class MainActivity extends AppCompatActivity {
                     System.out.println(mConnectedDeviceName + ":  " + readMessage);
                     Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
 
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        textToSpeech.speak(readMessage, TextToSpeech.QUEUE_FLUSH, null, null);
-                    } else {
-                        textToSpeech.speak(readMessage, TextToSpeech.QUEUE_FLUSH, null);
-                    }
+                    addToStateList(readMessage);
 
                     break;
                 case MESSAGE_DEVICE_NAME:
