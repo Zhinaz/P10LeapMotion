@@ -51,6 +51,8 @@ public class MainActivity extends AppCompatActivity {
     public static final String LAST_LOCATION_LONGITUDE = "LAST_LOCATION_LONGITUDE";
     public static final String LAST_LOCATION_LATITUDE = "LAST_LOCATION_LATITUDE";
     public static final String BLUETOOTH_PAIRED_DEVICES = "BLUETOOTH_PAIRED_DEVICES";
+    public static final String ATTENTIVE = "ATTENTIVE";
+    public static final String INATTENTIVE = "INATTENTIVE";
 
     public final static int MESSAGE_STATE_CHANGE = 1337;
     public final static String DEVICE_NAME = "1337 mmkay";
@@ -70,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
 
     private ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
     private Queue<String> stateQueue = new CircularFifoQueue<>(4);
+    private boolean increasedIntensity = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -322,29 +325,49 @@ public class MainActivity extends AppCompatActivity {
     private void addToStateList(String readMessage) {
         stateQueue.add(readMessage);
         int sameState = 0;
+        int attentiveState = 0;
         if (stateQueue.size() >= 4) {
             for (String state : stateQueue) {
-                if (state.equals("INATTENTIVE")) {
+                if (state.equals(INATTENTIVE)) {
                     sameState++;
+                } else if (state.equals(ATTENTIVE)) {
+                    attentiveState++;
                 }
             }
+
+            if (attentiveState == 4) {
+                increasedIntensity = false;
+            }
+
             if (sameState == 4) {
                 warnDriver();
+                increasedIntensity = true;
+                stateQueue = new CircularFifoQueue<>(4);
             }
         }
     }
 
     private void warnDriver() {
-        String textMessage = "Be attentive";
+
 
         // Set Image / GIF
-        new ImageViewTask().execute();
-
-        // Play warning sound
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            textToSpeech.speak(textMessage, TextToSpeech.QUEUE_FLUSH, null, null);
+        if (increasedIntensity) {
+            new ImageViewTask().execute();
+            String textMessage = "Be attentive stupid";
+            // Play warning sound
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                textToSpeech.speak(textMessage, TextToSpeech.QUEUE_FLUSH, null, null);
+            } else {
+                textToSpeech.speak(textMessage, TextToSpeech.QUEUE_FLUSH, null);
+            }
         } else {
-            textToSpeech.speak(textMessage, TextToSpeech.QUEUE_FLUSH, null);
+            String textMessage = "Be attentive";
+            // Play warning sound
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                textToSpeech.speak(textMessage, TextToSpeech.QUEUE_FLUSH, null, null);
+            } else {
+                textToSpeech.speak(textMessage, TextToSpeech.QUEUE_FLUSH, null);
+            }
         }
     }
 
@@ -401,7 +424,7 @@ public class MainActivity extends AppCompatActivity {
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
                     System.out.println(mConnectedDeviceName + ":  " + readMessage);
-                    Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
 
                     addToStateList(readMessage);
 
