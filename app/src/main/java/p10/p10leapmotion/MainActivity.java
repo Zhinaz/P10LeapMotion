@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
@@ -29,11 +30,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Queue;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
-import org.w3c.dom.Node;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -62,6 +63,8 @@ public class MainActivity extends AppCompatActivity {
     public final static int MESSAGE_READ = 1340;
     public final static int MESSAGE_WRITE = 1341;
 
+    public static final Integer INSTANCES_BEFORE_WARNING = 4;
+
     private LocationManager locationManager;
     private LocationListener locationListener;
     private TextToSpeech textToSpeech;
@@ -70,9 +73,17 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter mBluetoothAdapter = null;
     private String mConnectedDeviceName = null;
 
+    private float locationSpeed = 0;
+    private double locationLatitude = 0;
+    private double locationLongitude = 0;
+
     private ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
-    private Queue<String> stateQueue = new CircularFifoQueue<>(4);
+    private Queue<String> stateQueue = new CircularFifoQueue<>(INSTANCES_BEFORE_WARNING);
     private boolean increasedIntensity = false;
+
+    private List<String> attentiveStatesList = new ArrayList<>() ;
+    private List<Location> distanceLocationsList = new ArrayList<>();
+    private boolean dataCollecting = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -180,8 +191,19 @@ public class MainActivity extends AppCompatActivity {
 
     private void initialiseComponents() {
         // UI Elements
+        gifImageView = (GifImageView) findViewById(R.id.GifImageView);
         txt_location = (TextView) findViewById(R.id.txt_location);
         txt_pairedDevices = (TextView) findViewById(R.id.txt_pairedDevices);
+
+        radio_button = (Button) findViewById(R.id.btn_radio);
+        radio_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
+                startCollecting();
+            }
+        });
+
         media_button = (Button) findViewById(R.id.btn_media);
         media_button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -190,23 +212,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        radio_button = (Button) findViewById(R.id.btn_radio);
-        radio_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
-            }
-        });
-
         gps_button = (Button) findViewById(R.id.btn_gps);
         gps_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 gifImageView.setGifImageResource(R.drawable.cats);
+                stopCollecting();
             }
         });
 
-        gifImageView = (GifImageView) findViewById(R.id.GifImageView);
+
 
         setupTextToSpeech();
     }
@@ -222,6 +237,14 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void startCollecting() {
+        dataCollecting = true;
+    }
+
+    private void stopCollecting() {
+        dataCollecting = false;
+    }
+
     // Start Location section
     public void requestGPSLocationUpdates() {
         locationManager.requestLocationUpdates(
@@ -235,9 +258,17 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             System.out.println("gpsReceiver");
-            float locationSpeed = intent.getFloatExtra(LAST_LOCATION_SPEED, -1);
-            double locationLatitude = intent.getDoubleExtra(LAST_LOCATION_LATITUDE, 999);
-            double locationLongitude = intent.getDoubleExtra(LAST_LOCATION_LONGITUDE, 999);
+
+            locationSpeed = intent.getFloatExtra(LAST_LOCATION_SPEED, -1);
+            locationLatitude = intent.getDoubleExtra(LAST_LOCATION_LATITUDE, 999);
+            locationLongitude = intent.getDoubleExtra(LAST_LOCATION_LONGITUDE, 999);
+
+            if (dataCollecting) {
+                Location location = new Location("");
+                location.setLatitude(locationLatitude);
+                location.setLongitude(locationLongitude);
+                distanceLocationsList.add(location);
+            }
 
             if (locationLatitude == 999 || locationLongitude == 999) {
                 txt_location.setText("error, error");
@@ -326,30 +357,30 @@ public class MainActivity extends AppCompatActivity {
         stateQueue.add(readMessage);
         int sameState = 0;
         int attentiveState = 0;
-        if (stateQueue.size() >= 4) {
-            for (String state : stateQueue) {
-                if (state.equals(INATTENTIVE)) {
-                    sameState++;
-                } else if (state.equals(ATTENTIVE)) {
-                    attentiveState++;
+        //if (locationSpeed >= 20) {
+            if (stateQueue.size() >= INSTANCES_BEFORE_WARNING) {
+                for (String state : stateQueue) {
+                    if (state.equals(INATTENTIVE)) {
+                        sameState++;
+                    } else if (state.equals(ATTENTIVE)) {
+                        attentiveState++;
+                    }
+                }
+
+                if (attentiveState == INSTANCES_BEFORE_WARNING) {
+                    increasedIntensity = false;
+                }
+
+                if (sameState == INSTANCES_BEFORE_WARNING) {
+                    warnDriver();
+                    increasedIntensity = true;
+                    stateQueue = new CircularFifoQueue<>(INSTANCES_BEFORE_WARNING);
                 }
             }
-
-            if (attentiveState == 4) {
-                increasedIntensity = false;
-            }
-
-            if (sameState == 4) {
-                warnDriver();
-                increasedIntensity = true;
-                stateQueue = new CircularFifoQueue<>(4);
-            }
-        }
+        //}
     }
 
     private void warnDriver() {
-
-
         // Set Image / GIF
         if (increasedIntensity) {
             new ImageViewTask().execute();
@@ -426,6 +457,9 @@ public class MainActivity extends AppCompatActivity {
                     System.out.println(mConnectedDeviceName + ":  " + readMessage);
                     //Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
 
+                    if (dataCollecting) {
+                        attentiveStatesList.add(readMessage);
+                    }
                     addToStateList(readMessage);
 
                     break;
