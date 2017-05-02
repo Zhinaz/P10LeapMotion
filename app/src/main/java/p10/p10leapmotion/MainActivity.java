@@ -353,7 +353,7 @@ public class MainActivity extends AppCompatActivity {
         // Set Image / GIF
         if (increasedIntensity) {
             new ImageViewTask().execute();
-            String textMessage = "Be attentive stupid";
+            String textMessage = "Get your hand on the wheel!";
             // Play warning sound
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 textToSpeech.speak(textMessage, TextToSpeech.QUEUE_FLUSH, null, null);
