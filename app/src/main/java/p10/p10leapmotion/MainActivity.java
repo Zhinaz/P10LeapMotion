@@ -240,7 +240,7 @@ public class MainActivity extends AppCompatActivity {
             if (locationLatitude == 999 || locationLongitude == 999) {
                 txt_location.setText("error, error");
             } else {
-                txt_location.setText(String.valueOf(locationLatitude) + ", " + String.valueOf(locationLongitude));
+                txt_location.setText(String.valueOf(locationLatitude) + ", " + String.valueOf(locationLongitude) + ", DatSpeed: " + String.valueOf(locationSpeed));
             }
         }
     };
