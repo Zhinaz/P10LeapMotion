@@ -11,9 +11,11 @@ import android.content.IntentFilter;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.speech.tts.TextToSpeech;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -27,6 +29,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Locale;
+import java.util.Queue;
+
+import org.apache.commons.collections4.queue.CircularFifoQueue;
+import org.w3c.dom.Node;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -44,6 +51,8 @@ public class MainActivity extends AppCompatActivity {
     public static final String LAST_LOCATION_LONGITUDE = "LAST_LOCATION_LONGITUDE";
     public static final String LAST_LOCATION_LATITUDE = "LAST_LOCATION_LATITUDE";
     public static final String BLUETOOTH_PAIRED_DEVICES = "BLUETOOTH_PAIRED_DEVICES";
+    public static final String ATTENTIVE = "ATTENTIVE";
+    public static final String INATTENTIVE = "INATTENTIVE";
 
     public final static int MESSAGE_STATE_CHANGE = 1337;
     public final static String DEVICE_NAME = "1337 mmkay";
@@ -55,13 +64,15 @@ public class MainActivity extends AppCompatActivity {
 
     private LocationManager locationManager;
     private LocationListener locationListener;
+    private TextToSpeech textToSpeech;
 
     private BluetoothServices mBluetoothServices = null;
     private BluetoothAdapter mBluetoothAdapter = null;
     private String mConnectedDeviceName = null;
 
-    ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
-    ArrayAdapter<BluetoothDevice> pairedDeviceAdapter = null;
+    private ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
+    private Queue<String> stateQueue = new CircularFifoQueue<>(4);
+    private boolean increasedIntensity = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
-
+        setupTextToSpeech();
         if (mBluetoothServices != null) {
             if (mBluetoothServices.getState() == BluetoothServices.STATE_NONE) {
                 mBluetoothServices.start();
@@ -139,6 +150,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        if (textToSpeech != null) {
+            textToSpeech.stop();
+            textToSpeech.shutdown();
+        }
     }
 
     @Override
@@ -165,59 +180,46 @@ public class MainActivity extends AppCompatActivity {
 
     private void initialiseComponents() {
         // UI Elements
-        txt_location = (TextView)findViewById(R.id.txt_location);
-        txt_pairedDevices = (TextView)findViewById(R.id.txt_pairedDevices);
-        media_button = (Button)findViewById(R.id.btn_media);
+        txt_location = (TextView) findViewById(R.id.txt_location);
+        txt_pairedDevices = (TextView) findViewById(R.id.txt_pairedDevices);
+        media_button = (Button) findViewById(R.id.btn_media);
         media_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                sendMessage("Hård pik på alle måder!");
+                warnDriver();
             }
         });
-        radio_button = (Button)findViewById(R.id.btn_radio);
+
+        radio_button = (Button) findViewById(R.id.btn_radio);
         radio_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
             }
         });
-        gps_button = (Button)findViewById(R.id.btn_gps);
+
+        gps_button = (Button) findViewById(R.id.btn_gps);
         gps_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 gifImageView.setGifImageResource(R.drawable.cats);
             }
         });
+
         gifImageView = (GifImageView) findViewById(R.id.GifImageView);
+
+        setupTextToSpeech();
     }
 
-    // ASyncTask for update UI  // new ImageViewTask().execute(warning, null, null);
-    private class ImageViewTask extends AsyncTask<Integer, Void, Void> {
-        protected void onPreExecute() {
-            gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
-        }
-
-        protected Void doInBackground(Integer... params) {
-
-            Integer warning = params[0];
-            switch (warning) {
-                case 0:
-                    break;
-                case 1:
-                    break;
-                case 2:
-                    break;
-                case 3:
-                    break;
-                case 4:
-                    break;
+    private void setupTextToSpeech() {
+        textToSpeech = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (status != TextToSpeech.ERROR) {
+                    textToSpeech.setLanguage(Locale.UK);
+                }
             }
-            return null;
-        }
-
-        protected void onPostExecute(Void result) {
-            // Show closing gif
-        }
+        });
     }
 
     // Start Location section
@@ -272,6 +274,7 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Establish connection with other device
+     *
      * @param secure Socket Security type - Secure (true) , Insecure (false)
      */
     private void connectDevice(int deviceNumber, boolean secure) {
@@ -292,18 +295,18 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Choose Bluetooth device");
         builder.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_single_choice, tempList), new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        dialogInterface.dismiss();
-                        connectDevice(i, false);
-                    }
-                });
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+                connectDevice(i, false);
+            }
+        });
         AlertDialog alert = builder.create();
         alert.show();
         return builder.create();
     }
 
-    // Send a message to connected bluetooth device8
+    // Send a message to connected bluetooth device
     private void sendMessage(String message) {
         // Check that we're actually connected before trying anything
         if (mBluetoothServices.getState() != BluetoothServices.STATE_CONNECTED) {
@@ -316,6 +319,75 @@ public class MainActivity extends AppCompatActivity {
             // Get the message bytes and tell the BluetoothChatService to write
             byte[] send = message.getBytes();
             mBluetoothServices.write(send);
+        }
+    }
+
+    private void addToStateList(String readMessage) {
+        stateQueue.add(readMessage);
+        int sameState = 0;
+        int attentiveState = 0;
+        if (stateQueue.size() >= 4) {
+            for (String state : stateQueue) {
+                if (state.equals(INATTENTIVE)) {
+                    sameState++;
+                } else if (state.equals(ATTENTIVE)) {
+                    attentiveState++;
+                }
+            }
+
+            if (attentiveState == 4) {
+                increasedIntensity = false;
+            }
+
+            if (sameState == 4) {
+                warnDriver();
+                increasedIntensity = true;
+                stateQueue = new CircularFifoQueue<>(4);
+            }
+        }
+    }
+
+    private void warnDriver() {
+
+
+        // Set Image / GIF
+        if (increasedIntensity) {
+            new ImageViewTask().execute();
+            String textMessage = "Get your hand on the wheel!";
+            // Play warning sound
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                textToSpeech.speak(textMessage, TextToSpeech.QUEUE_FLUSH, null, null);
+            } else {
+                textToSpeech.speak(textMessage, TextToSpeech.QUEUE_FLUSH, null);
+            }
+        } else {
+            String textMessage = "Be attentive";
+            // Play warning sound
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                textToSpeech.speak(textMessage, TextToSpeech.QUEUE_FLUSH, null, null);
+            } else {
+                textToSpeech.speak(textMessage, TextToSpeech.QUEUE_FLUSH, null);
+            }
+        }
+    }
+
+    // ASyncTask for update UI  // new ImageViewTask().execute(warning, null, null);
+    private class ImageViewTask extends AsyncTask<Integer, Void, Void> {
+        protected void onPreExecute() {
+            gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
+        }
+
+        protected Void doInBackground(Integer... params) {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                Thread.interrupted();
+            }
+            return null;
+        }
+
+        protected void onPostExecute(Void result) {
+            gifImageView.setGifImageResource(R.drawable.empty);
         }
     }
 
@@ -345,14 +417,17 @@ public class MainActivity extends AppCompatActivity {
                     byte[] writeBuf = (byte[]) msg.obj;
                     // construct a string from the buffer
                     String writeMessage = new String(writeBuf);
-                    System.out.println("Me:  " + writeMessage);
+                    System.out.println("Me: " + writeMessage);
                     break;
                 case MESSAGE_READ:
                     byte[] readBuf = (byte[]) msg.obj;
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
                     System.out.println(mConnectedDeviceName + ":  " + readMessage);
-                    Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
+
+                    addToStateList(readMessage);
+
                     break;
                 case MESSAGE_DEVICE_NAME:
                     // save the connected device's name
