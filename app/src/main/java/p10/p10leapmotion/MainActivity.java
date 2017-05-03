@@ -83,6 +83,9 @@ public class MainActivity extends AppCompatActivity {
     private boolean increasedIntensity = false;
 
     private List<String> attentiveStatesList = new ArrayList<>();
+    private List<String> rightPredictedStates = new ArrayList<>();
+    private List<String> leftPredictedStates = new ArrayList<>();
+
     private List<Location> distanceLocationsList = new ArrayList<>();
     private boolean dataCollecting = false;
 
@@ -232,6 +235,8 @@ public class MainActivity extends AppCompatActivity {
     private void startCollecting() {
         dataCollecting = true;
         attentiveStatesList = new ArrayList<>();
+        rightPredictedStates = new ArrayList<>();
+        leftPredictedStates = new ArrayList<>();
         distanceLocationsList = new ArrayList<>();
     }
 
@@ -451,6 +456,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+    private void handleBluetoothMessage(String message) {
+        // Example message is: "INATTENTIVE 3.0 1.0" First value is predictedRight, second is predictedLeft
+        String[] temp = message.split(" ");
+
+        addToStateList(temp[0]);
+        if (dataCollecting) {
+            attentiveStatesList.add(temp[0]);
+
+            if (temp.length == 3) {
+                if (!temp[1].equals("-1.0")) {
+                    rightPredictedStates.add(temp[1]);
+                }
+                if (!temp[2].equals("-1.0")) {
+                    leftPredictedStates.add(temp[2]);
+                }
+            }
+        }
+    }
+
     /**
      * The Handler that gets information back from the BluetoothServices
      */
@@ -486,10 +511,11 @@ public class MainActivity extends AppCompatActivity {
                     System.out.println(mConnectedDeviceName + ":  " + readMessage);
                     //Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
 
-                    if (dataCollecting) {
+                    handleBluetoothMessage(readMessage);
+                    /*if (dataCollecting) {
                         attentiveStatesList.add(readMessage);
-                    }
-                    addToStateList(readMessage);
+                    }*/
+                    //addToStateList(readMessage);
 
                     break;
                 case MESSAGE_DEVICE_NAME:
