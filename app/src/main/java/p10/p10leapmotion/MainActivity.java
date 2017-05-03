@@ -1,5 +1,6 @@
 package p10.p10leapmotion;
 
+import android.Manifest;
 import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -8,6 +9,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -20,6 +22,7 @@ import android.speech.tts.TextToSpeech;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -29,15 +32,22 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
+
+import org.apache.commons.collections4.queue.CircularFifoQueue;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Queue;
 
-import org.apache.commons.collections4.queue.CircularFifoQueue;
-import org.w3c.dom.Text;
-
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener,
+        LocationListener {
 
     private static final int REQUEST_ENABLE_BT = 137;
     // UI Elements
@@ -55,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String BLUETOOTH_PAIRED_DEVICES = "BLUETOOTH_PAIRED_DEVICES";
     public static final String ATTENTIVE = "ATTENTIVE";
     public static final String INATTENTIVE = "INATTENTIVE";
+    public static final String TAG = "MainActivity";
 
     public final static int MESSAGE_STATE_CHANGE = 1337;
     public final static String DEVICE_NAME = "1337 mmkay";
@@ -63,6 +74,9 @@ public class MainActivity extends AppCompatActivity {
     public final static int MESSAGE_TOAST = 1339;
     public final static int MESSAGE_READ = 1340;
     public final static int MESSAGE_WRITE = 1341;
+
+    private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 1000;
+    public static final int REQUEST_PERMISSIONS = 99;
 
     public static final Integer INSTANCES_BEFORE_WARNING = 4;
 
@@ -86,11 +100,21 @@ public class MainActivity extends AppCompatActivity {
     private List<Location> distanceLocationsList = new ArrayList<>();
     private boolean dataCollecting = false;
 
+    private GoogleApiClient mGoogleApiClient;
+    LocationService gps = null;
+    private Location previousLocation;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initialiseComponents();
+
+        checkPermissions();
+        if (checkPlayServices()) {
+            buildGoogleApiClient();
+        }
+        startLocationService();
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mBluetoothAdapter == null) {
@@ -116,8 +140,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-
-        requestGPSLocationUpdates();
+        startLocationService();
 
         if (!mBluetoothAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -130,6 +153,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
+        startLocationService();
+
         setupTextToSpeech();
         if (mBluetoothServices != null) {
             if (mBluetoothServices.getState() == BluetoothServices.STATE_NONE) {
@@ -141,6 +166,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        stopLocationService();
         locationManager.removeUpdates(locationListener);
         if (mBluetoothServices != null) {
             mBluetoothServices.stop();
@@ -162,6 +188,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        stopLocationService();
         if (textToSpeech != null) {
             textToSpeech.stop();
             textToSpeech.shutdown();
@@ -190,6 +217,42 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onLocationChanged(android.location.Location location) {
+        updateDisplay(location);
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {
+        Log.i(TAG, "Connection failed: ConnectionResult.getErrorCode() = " + result.getErrorCode());
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+        Log.i(TAG, "Connected to GoogleApiClient");
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        Log.i(TAG, "Connection suspended");
+        // Reestablish connection
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+    }
+
     private void initialiseComponents() {
         // UI Elements
         gifImageView = (GifImageView) findViewById(R.id.GifImageView);
@@ -216,6 +279,96 @@ public class MainActivity extends AppCompatActivity {
         });
 
         setupTextToSpeech();
+    }
+
+    public void checkPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            ArrayList<String> permissions = new ArrayList<>();
+            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
+            }
+            if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+            }
+            if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.CAMERA);
+            }
+            if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.RECORD_AUDIO);
+            }
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            }
+
+
+            if (!permissions.isEmpty()) {
+                requestPermissions(permissions.toArray(new String[permissions.size()]), REQUEST_PERMISSIONS);
+            }
+        }
+    }
+
+    private boolean checkPlayServices() {
+        int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
+        if (resultCode != ConnectionResult.SUCCESS) {
+            if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
+                GooglePlayServicesUtil.getErrorDialog(resultCode, this,
+                        PLAY_SERVICES_RESOLUTION_REQUEST).show();
+            } else {
+                Toast.makeText(getApplicationContext(),
+                        "This device is not supported.", Toast.LENGTH_LONG)
+                        .show();
+                finish();
+            }
+            return false;
+        }
+        return true;
+    }
+
+    protected synchronized void buildGoogleApiClient() {
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+        mGoogleApiClient.connect();
+    }
+
+    private void startLocationService() {
+        if (gps == null) {
+            gps = new LocationService(this);
+            gps.startAndCheckGPS();
+        }
+    }
+
+    private void stopLocationService() {
+        if (gps != null) {
+            gps.stopUsingGPS();
+            gps = null;
+        }
+    }
+
+    public void updateDisplay(Location location) {
+        System.out.println("UpdateDisplay");
+
+        if (previousLocation != null) {
+            location.setSpeed(calculateSpeed(location));
+        } else {
+            location.setSpeed(0);
+        }
+        previousLocation = location;
+
+        Intent notifyIntent = new Intent(LOCATION_CHANGED);
+        notifyIntent.putExtra(LAST_LOCATION_SPEED, location.getSpeed());
+        notifyIntent.putExtra(LAST_LOCATION_LATITUDE, location.getLatitude());
+        notifyIntent.putExtra(LAST_LOCATION_LONGITUDE, location.getLongitude());
+        LocalBroadcastManager.getInstance(mContext).sendBroadcast(notifyIntent); //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    }
+
+    private float calculateSpeed(Location location) {
+        double timeDiff = location.getTime() - previousLocation.getTime();
+        double distDiff = location.distanceTo(previousLocation);
+
+        return (float)(distDiff/timeDiff * 3600);
     }
 
     private void setupTextToSpeech() {
@@ -272,15 +425,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return 0;
-    }
-
-    // Start Location section
-    public void requestGPSLocationUpdates() {
-        locationManager.requestLocationUpdates(
-                LocationManager.NETWORK_PROVIDER,
-                0,
-                0,
-                locationListener);
     }
 
     public BroadcastReceiver gpsReceiver = new BroadcastReceiver() {
@@ -387,25 +531,25 @@ public class MainActivity extends AppCompatActivity {
         int sameState = 0;
         int attentiveState = 0;
         //if (locationSpeed >= 20) {
-            if (stateQueue.size() >= INSTANCES_BEFORE_WARNING) {
-                for (String state : stateQueue) {
-                    if (state.equals(INATTENTIVE)) {
-                        sameState++;
-                    } else if (state.equals(ATTENTIVE)) {
-                        attentiveState++;
-                    }
-                }
-
-                if (attentiveState == INSTANCES_BEFORE_WARNING) {
-                    increasedIntensity = false;
-                }
-
-                if (sameState == INSTANCES_BEFORE_WARNING) {
-                    warnDriver();
-                    increasedIntensity = true;
-                    stateQueue = new CircularFifoQueue<>(INSTANCES_BEFORE_WARNING);
+        if (stateQueue.size() >= INSTANCES_BEFORE_WARNING) {
+            for (String state : stateQueue) {
+                if (state.equals(INATTENTIVE)) {
+                    sameState++;
+                } else if (state.equals(ATTENTIVE)) {
+                    attentiveState++;
                 }
             }
+
+            if (attentiveState == INSTANCES_BEFORE_WARNING) {
+                increasedIntensity = false;
+            }
+
+            if (sameState == INSTANCES_BEFORE_WARNING) {
+                warnDriver();
+                increasedIntensity = true;
+                stateQueue = new CircularFifoQueue<>(INSTANCES_BEFORE_WARNING);
+            }
+        }
         //}
     }
 
