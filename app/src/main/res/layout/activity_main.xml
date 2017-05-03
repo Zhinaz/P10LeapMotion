@@ -45,14 +45,6 @@
                 tools:layout_editor_absoluteY="16dp" />
 
             <Button
-                android:id="@+id/btn_media"
-                android:layout_width="75dp"
-                android:layout_height="75dp"
-                android:text="Media"
-                tools:layout_editor_absoluteX="16dp"
-                tools:layout_editor_absoluteY="16dp" />
-
-            <Button
                 android:id="@+id/btn_gps"
                 android:layout_width="75dp"
                 android:layout_height="75dp"
@@ -67,10 +59,17 @@
                 tools:text="Location" />
 
             <TextView
-                android:id="@+id/txt_pairedDevices"
+                android:id="@+id/txt_distance"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                tools:text="Paired devices" />
+                tools:text="Distance" />
+
+            <TextView
+                android:id="@+id/txt_attentive"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                tools:text="Attentive" />
+
 
         </LinearLayout>
 
@@ -89,5 +88,7 @@
 
 
     </LinearLayout>
+
+
 
 </android.support.constraint.ConstraintLayout>

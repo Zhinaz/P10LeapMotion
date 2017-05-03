@@ -10,6 +10,9 @@ import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.widget.Toast;
 
+import java.text.DateFormat;
+import java.util.Date;
+
 import static p10.p10leapmotion.MainActivity.LAST_LOCATION_LATITUDE;
 import static p10.p10leapmotion.MainActivity.LAST_LOCATION_LONGITUDE;
 import static p10.p10leapmotion.MainActivity.LAST_LOCATION_SPEED;
@@ -18,14 +21,30 @@ import static p10.p10leapmotion.MainActivity.LOCATION_CHANGED;
 public class GPS implements LocationListener {
 
     private Context mContext;
+    private Location previousLocation;
 
     public void updateDisplay(Location location) {
         System.out.println("UpdateDisplay");
+
+        if (previousLocation != null) {
+            location.setSpeed(calculateSpeed(location));
+        } else {
+            location.setSpeed(0);
+        }
+        previousLocation = location;
+
         Intent notifyIntent = new Intent(LOCATION_CHANGED);
         notifyIntent.putExtra(LAST_LOCATION_SPEED, location.getSpeed());
         notifyIntent.putExtra(LAST_LOCATION_LATITUDE, location.getLatitude());
         notifyIntent.putExtra(LAST_LOCATION_LONGITUDE, location.getLongitude());
         LocalBroadcastManager.getInstance(mContext).sendBroadcast(notifyIntent);
+    }
+
+    private float calculateSpeed(Location location) {
+        double timeDiff = location.getTime() - previousLocation.getTime();
+        double distDiff = location.distanceTo(previousLocation);
+
+        return (float)(distDiff/timeDiff * 3600);
     }
 
     @Override

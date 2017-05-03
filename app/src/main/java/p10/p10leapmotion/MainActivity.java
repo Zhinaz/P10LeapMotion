@@ -35,14 +35,15 @@ import java.util.Locale;
 import java.util.Queue;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
+import org.w3c.dom.Text;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_ENABLE_BT = 137;
     // UI Elements
     public TextView txt_location;
-    public TextView txt_pairedDevices;
-    public Button media_button;
+    public TextView txt_distance;
+    public TextView txt_attentive;
     public Button radio_button;
     public Button gps_button;
     public GifImageView gifImageView;
@@ -81,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
     private Queue<String> stateQueue = new CircularFifoQueue<>(INSTANCES_BEFORE_WARNING);
     private boolean increasedIntensity = false;
 
-    private List<String> attentiveStatesList = new ArrayList<>() ;
+    private List<String> attentiveStatesList = new ArrayList<>();
     private List<Location> distanceLocationsList = new ArrayList<>();
     private boolean dataCollecting = false;
 
@@ -193,7 +194,8 @@ public class MainActivity extends AppCompatActivity {
         // UI Elements
         gifImageView = (GifImageView) findViewById(R.id.GifImageView);
         txt_location = (TextView) findViewById(R.id.txt_location);
-        txt_pairedDevices = (TextView) findViewById(R.id.txt_pairedDevices);
+        txt_attentive = (TextView) findViewById(R.id.txt_attentive);
+        txt_distance = (TextView) findViewById(R.id.txt_distance);
 
         radio_button = (Button) findViewById(R.id.btn_radio);
         radio_button.setOnClickListener(new View.OnClickListener() {
@@ -201,14 +203,6 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
                 startCollecting();
-            }
-        });
-
-        media_button = (Button) findViewById(R.id.btn_media);
-        media_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                warnDriver();
             }
         });
 
@@ -220,8 +214,6 @@ public class MainActivity extends AppCompatActivity {
                 stopCollecting();
             }
         });
-
-
 
         setupTextToSpeech();
     }
@@ -239,10 +231,47 @@ public class MainActivity extends AppCompatActivity {
 
     private void startCollecting() {
         dataCollecting = true;
+        attentiveStatesList = new ArrayList<>();
+        distanceLocationsList = new ArrayList<>();
     }
 
     private void stopCollecting() {
         dataCollecting = false;
+        float totalDistance = calculateDistance();
+        float attentivePercentage = calculateAttentivePercentage();
+
+        txt_distance.setText(String.valueOf(totalDistance) + " meter");
+        txt_attentive.setText(String.valueOf(attentivePercentage) + "%");
+    }
+
+    private float calculateDistance() {
+        float totalDistance = 0;
+        Location previousLocation = null;
+        if (distanceLocationsList != null) {
+            for (Location location : distanceLocationsList) {
+                if (previousLocation != null) {
+                    totalDistance += previousLocation.distanceTo(location);
+                }
+                previousLocation = location;
+            }
+        }
+        return totalDistance;
+    }
+
+    private float calculateAttentivePercentage() {
+        int totalStates = attentiveStatesList.size();
+        int attentiveStates = 0;
+
+        if (totalStates > 0) {
+            for (String state : attentiveStatesList) {
+                if (state.equals("ATTENTIVE")) {
+                    attentiveStates++;
+                }
+            }
+            return (attentiveStates / totalStates) * 100;
+        }
+
+        return 0;
     }
 
     // Start Location section
