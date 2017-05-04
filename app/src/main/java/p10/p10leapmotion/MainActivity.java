@@ -391,8 +391,6 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     public void updateDisplay(Location location) {
-        Log.i(TAG, "Running: updateDisplay");
-
         if (mLastLocation != null) {
             location.setSpeed(calculateSpeed(location));
         } else {
@@ -459,16 +457,18 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private float calculateAttentivePercentage() {
-        int totalStates = attentiveStatesList.size();
-        int attentiveStates = 0;
+        float totalStates = attentiveStatesList.size();
+        float attentiveStates = 0;
 
         if (totalStates > 0) {
             for (String state : attentiveStatesList) {
-                if (state.equals("ATTENTIVE")) {
+                if (state.equals(ATTENTIVE)) {
                     attentiveStates++;
                 }
             }
             return (attentiveStates / totalStates) * 100;
+        } else {
+            Log.i(TAG, "Calculate: totalStaes is empty");
         }
 
         return 0;
