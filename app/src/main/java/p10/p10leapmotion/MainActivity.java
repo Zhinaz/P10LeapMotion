@@ -1,5 +1,6 @@
 package p10.p10leapmotion;
 
+import android.Manifest;
 import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -8,18 +9,19 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.IntentSender;
+import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.speech.tts.TextToSpeech;
-import android.support.v4.content.LocalBroadcastManager;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -29,15 +31,31 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStates;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.location.LocationListener;
+
+import org.apache.commons.collections4.queue.CircularFifoQueue;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Queue;
 
-import org.apache.commons.collections4.queue.CircularFifoQueue;
-import org.w3c.dom.Text;
-
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener,
+        LocationListener {
 
     private static final int REQUEST_ENABLE_BT = 137;
     // UI Elements
@@ -55,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String BLUETOOTH_PAIRED_DEVICES = "BLUETOOTH_PAIRED_DEVICES";
     public static final String ATTENTIVE = "ATTENTIVE";
     public static final String INATTENTIVE = "INATTENTIVE";
+    public static final String TAG = "MainActivity";
 
     public final static int MESSAGE_STATE_CHANGE = 1337;
     public final static String DEVICE_NAME = "1337 mmkay";
@@ -64,19 +83,17 @@ public class MainActivity extends AppCompatActivity {
     public final static int MESSAGE_READ = 1340;
     public final static int MESSAGE_WRITE = 1341;
 
+    private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
+    private final static int REQUEST_CHECK_SETTINGS = 9001;
+    public static final int REQUEST_PERMISSIONS = 99;
+
     public static final Integer INSTANCES_BEFORE_WARNING = 4;
 
-    private LocationManager locationManager;
-    private LocationListener locationListener;
     private TextToSpeech textToSpeech;
 
     private BluetoothServices mBluetoothServices = null;
     private BluetoothAdapter mBluetoothAdapter = null;
     private String mConnectedDeviceName = null;
-
-    private float locationSpeed = 0;
-    private double locationLatitude = 0;
-    private double locationLongitude = 0;
 
     private ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
     private Queue<String> stateQueue = new CircularFifoQueue<>(INSTANCES_BEFORE_WARNING);
@@ -89,11 +106,22 @@ public class MainActivity extends AppCompatActivity {
     private List<Location> distanceLocationsList = new ArrayList<>();
     private boolean dataCollecting = false;
 
+    private GoogleApiClient mGoogleApiClient;
+    private Location mLastLocation;
+    private LocationRequest mLocationRequest = null;
+    private boolean mRequestingLocationUpdates = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initialiseComponents();
+
+        createLocationRequest();
+        checkPermissions();
+        if (checkPlayServices()) {
+            buildGoogleApiClient();
+        }
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mBluetoothAdapter == null) {
@@ -109,18 +137,12 @@ public class MainActivity extends AppCompatActivity {
 
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(bluetoothReceiver, filter);
-
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        locationListener = new GPS();
-
-        LocalBroadcastManager.getInstance(this).registerReceiver(gpsReceiver, new IntentFilter(LOCATION_CHANGED));
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-
-        requestGPSLocationUpdates();
+        mGoogleApiClient.connect();
 
         if (!mBluetoothAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -133,6 +155,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
+        if (mGoogleApiClient.isConnected() && !mRequestingLocationUpdates) {
+            startLocationUpdates();
+        }
+
         setupTextToSpeech();
         if (mBluetoothServices != null) {
             if (mBluetoothServices.getState() == BluetoothServices.STATE_NONE) {
@@ -144,7 +170,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        locationManager.removeUpdates(locationListener);
+        mGoogleApiClient.disconnect();
         if (mBluetoothServices != null) {
             mBluetoothServices.stop();
         }
@@ -153,7 +179,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(gpsReceiver);
 
         unregisterReceiver(bluetoothReceiver);
 
@@ -165,6 +190,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+
+        stopLocationUpdates();
+
         if (textToSpeech != null) {
             textToSpeech.stop();
             textToSpeech.shutdown();
@@ -193,6 +221,78 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onLocationChanged(android.location.Location location) {
+        updateDisplay(location);
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {
+        Log.i(TAG, "Connection failed: ConnectionResult.getErrorCode() = " + result.getErrorCode());
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+        Log.i(TAG, "Connected to GoogleApiClient");
+
+        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        if (mLastLocation != null) {
+            txt_location.setText(String.valueOf(mLastLocation.getLatitude()) + ", "
+                    + String.valueOf(mLastLocation.getLongitude()));
+        }
+
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+                .addLocationRequest(mLocationRequest);
+
+        PendingResult<LocationSettingsResult> result =
+                LocationServices.SettingsApi.checkLocationSettings(mGoogleApiClient,
+                        builder.build());
+
+        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
+            @Override
+            public void onResult(@NonNull LocationSettingsResult locationSettingsResult) {
+                Status status = locationSettingsResult.getStatus();
+                LocationSettingsStates locationSettingsStates = locationSettingsResult.getLocationSettingsStates();
+
+                switch (status.getStatusCode()) {
+                    case LocationSettingsStatusCodes.SUCCESS:
+                        startLocationUpdates();
+
+                        break;
+                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        // Location settings are not satisfied, but this can be fixed
+                        // by showing the user a dialog.
+                        try {
+                            // Show the dialog by calling startResolutionForResult(),
+                            // and check the result in onActivityResult().
+                            status.startResolutionForResult(
+                                    MainActivity.this,
+                                    REQUEST_CHECK_SETTINGS);
+                        } catch (IntentSender.SendIntentException e) {
+                            // Ignore the error.
+                        }
+                        break;
+                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                        // Location settings are not satisfied. However, we have no way
+                        // to fix the settings so we won't show the dialog.
+
+                        break;
+                }
+            }
+        });
+
+        /*if (mGoogleApiClient.isConnected() && !mRequestingLocationUpdates) {
+            startLocationUpdates();
+        }*/
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        Log.i(TAG, "Connection suspended");
+        // Reestablish connection
+        mGoogleApiClient.connect();
+    }
+
     private void initialiseComponents() {
         // UI Elements
         gifImageView = (GifImageView) findViewById(R.id.GifImageView);
@@ -219,6 +319,106 @@ public class MainActivity extends AppCompatActivity {
         });
 
         setupTextToSpeech();
+    }
+
+    public void checkPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            ArrayList<String> permissions = new ArrayList<>();
+            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
+            }
+            if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+            }
+            if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.CAMERA);
+            }
+            if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.RECORD_AUDIO);
+            }
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            }
+
+
+            if (!permissions.isEmpty()) {
+                requestPermissions(permissions.toArray(new String[permissions.size()]), REQUEST_PERMISSIONS);
+            }
+        }
+    }
+
+    private boolean checkPlayServices() {
+        Log.i(TAG, "Running: checkPlayServices");
+        GoogleApiAvailability googleApi = GoogleApiAvailability.getInstance();
+        int resultCode = googleApi.isGooglePlayServicesAvailable(this);
+        if (resultCode != ConnectionResult.SUCCESS) {
+            if (googleApi.isUserResolvableError(resultCode)) {
+                googleApi.getErrorDialog(this, resultCode,
+                        PLAY_SERVICES_RESOLUTION_REQUEST).show();
+            } else {
+                Toast.makeText(getApplicationContext(),
+                        "This device is not supported.", Toast.LENGTH_LONG)
+                        .show();
+                finish();
+            }
+            return false;
+        }
+        return true;
+    }
+
+    protected synchronized void buildGoogleApiClient() {
+        Log.i(TAG, "Running: buildGoogleApiClient");
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+        mGoogleApiClient.connect();
+    }
+
+    protected void createLocationRequest() {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(10000);
+        mLocationRequest.setFastestInterval(5000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    }
+
+    protected void startLocationUpdates() {
+        mRequestingLocationUpdates = true;
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+    }
+
+    protected void stopLocationUpdates() {
+        mRequestingLocationUpdates = false;
+        if (mGoogleApiClient.isConnected()) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+        }
+    }
+
+    public void updateDisplay(Location location) {
+        Log.i(TAG, "Running: updateDisplay");
+
+        if (mLastLocation != null) {
+            location.setSpeed(calculateSpeed(location));
+        } else {
+            location.setSpeed(0);
+        }
+        mLastLocation = location;
+
+        if (dataCollecting) {
+            distanceLocationsList.add(location);
+        }
+
+        txt_location.setText(String.valueOf(location.getLatitude()) + ", "
+                + String.valueOf(location.getLongitude()) + ", DatSpeed: "
+                + String.valueOf(location.getSpeed()));
+    }
+
+    private float calculateSpeed(Location location) {
+        double timeDiff = location.getTime() - mLastLocation.getTime();
+        double distDiff = location.distanceTo(mLastLocation);
+
+        return (float)(distDiff/timeDiff * 3600);
     }
 
     private void setupTextToSpeech() {
@@ -278,39 +478,6 @@ public class MainActivity extends AppCompatActivity {
 
         return 0;
     }
-
-    // Start Location section
-    public void requestGPSLocationUpdates() {
-        locationManager.requestLocationUpdates(
-                LocationManager.NETWORK_PROVIDER,
-                0,
-                0,
-                locationListener);
-    }
-
-    public BroadcastReceiver gpsReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            System.out.println("gpsReceiver");
-
-            locationSpeed = intent.getFloatExtra(LAST_LOCATION_SPEED, -1);
-            locationLatitude = intent.getDoubleExtra(LAST_LOCATION_LATITUDE, 999);
-            locationLongitude = intent.getDoubleExtra(LAST_LOCATION_LONGITUDE, 999);
-
-            if (dataCollecting) {
-                Location location = new Location("");
-                location.setLatitude(locationLatitude);
-                location.setLongitude(locationLongitude);
-                distanceLocationsList.add(location);
-            }
-
-            if (locationLatitude == 999 || locationLongitude == 999) {
-                txt_location.setText("error, error");
-            } else {
-                txt_location.setText(String.valueOf(locationLatitude) + ", " + String.valueOf(locationLongitude) + ", DatSpeed: " + String.valueOf(locationSpeed));
-            }
-        }
-    };
     // end location section
 
     // Start bluetooth section
@@ -392,25 +559,25 @@ public class MainActivity extends AppCompatActivity {
         int sameState = 0;
         int attentiveState = 0;
         //if (locationSpeed >= 20) {
-            if (stateQueue.size() >= INSTANCES_BEFORE_WARNING) {
-                for (String state : stateQueue) {
-                    if (state.equals(INATTENTIVE)) {
-                        sameState++;
-                    } else if (state.equals(ATTENTIVE)) {
-                        attentiveState++;
-                    }
-                }
-
-                if (attentiveState == INSTANCES_BEFORE_WARNING) {
-                    increasedIntensity = false;
-                }
-
-                if (sameState == INSTANCES_BEFORE_WARNING) {
-                    warnDriver();
-                    increasedIntensity = true;
-                    stateQueue = new CircularFifoQueue<>(INSTANCES_BEFORE_WARNING);
+        if (stateQueue.size() >= INSTANCES_BEFORE_WARNING) {
+            for (String state : stateQueue) {
+                if (state.equals(INATTENTIVE)) {
+                    sameState++;
+                } else if (state.equals(ATTENTIVE)) {
+                    attentiveState++;
                 }
             }
+
+            if (attentiveState == INSTANCES_BEFORE_WARNING) {
+                increasedIntensity = false;
+            }
+
+            if (sameState == INSTANCES_BEFORE_WARNING) {
+                warnDriver();
+                increasedIntensity = true;
+                stateQueue = new CircularFifoQueue<>(INSTANCES_BEFORE_WARNING);
+            }
+        }
         //}
     }
 
