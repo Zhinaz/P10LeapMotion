@@ -37,13 +37,13 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
-import com.google.android.gms.location.LocationListener;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 
@@ -66,10 +66,6 @@ public class MainActivity extends AppCompatActivity implements
     public Button gps_button;
     public GifImageView gifImageView;
 
-    public static final String LOCATION_CHANGED = "LOCATION_CHANGED";
-    public static final String LAST_LOCATION_SPEED = "LAST_LOCATION_SPEED";
-    public static final String LAST_LOCATION_LONGITUDE = "LAST_LOCATION_LONGITUDE";
-    public static final String LAST_LOCATION_LATITUDE = "LAST_LOCATION_LATITUDE";
     public static final String BLUETOOTH_PAIRED_DEVICES = "BLUETOOTH_PAIRED_DEVICES";
     public static final String ATTENTIVE = "ATTENTIVE";
     public static final String INATTENTIVE = "INATTENTIVE";
@@ -87,14 +83,13 @@ public class MainActivity extends AppCompatActivity implements
     private final static int REQUEST_CHECK_SETTINGS = 9001;
     public static final int REQUEST_PERMISSIONS = 99;
 
-    public static final Integer INSTANCES_BEFORE_WARNING = 4;
-
     private TextToSpeech textToSpeech;
 
     private BluetoothServices mBluetoothServices = null;
     private BluetoothAdapter mBluetoothAdapter = null;
     private String mConnectedDeviceName = null;
 
+    public static final Integer INSTANCES_BEFORE_WARNING = 4;
     private ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
     private Queue<String> stateQueue = new CircularFifoQueue<>(INSTANCES_BEFORE_WARNING);
     private boolean increasedIntensity = false;
@@ -153,7 +148,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onResume() {
+    protected void onResume() {
         super.onResume();
         if (mGoogleApiClient.isConnected() && !mRequestingLocationUpdates) {
             startLocationUpdates();
@@ -418,7 +413,7 @@ public class MainActivity extends AppCompatActivity implements
         double timeDiff = location.getTime() - mLastLocation.getTime();
         double distDiff = location.distanceTo(mLastLocation);
 
-        return (float)(distDiff/timeDiff * 3600);
+        return (float) (distDiff / timeDiff * 3600);
     }
 
     private void setupTextToSpeech() {
