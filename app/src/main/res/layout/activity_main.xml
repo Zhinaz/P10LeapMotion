@@ -41,7 +41,7 @@
                 android:id="@+id/btn_radio"
                 android:layout_width="75dp"
                 android:layout_height="75dp"
-                android:text="Radio"
+                android:text="Start"
                 tools:layout_editor_absoluteX="16dp"
                 tools:layout_editor_absoluteY="16dp" />
 
@@ -49,9 +49,25 @@
                 android:id="@+id/btn_gps"
                 android:layout_width="75dp"
                 android:layout_height="75dp"
-                android:text="GPS"
+                android:text="Stop"
                 tools:layout_editor_absoluteX="16dp"
                 tools:layout_editor_absoluteY="16dp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
             <TextView
                 android:id="@+id/txt_location"
@@ -60,33 +76,32 @@
                 tools:text="Location" />
 
             <TextView
+                android:id="@+id/txt_speed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                tools:text="Speed" />
+
+            <TextView
                 android:id="@+id/txt_distance"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:text="Distance: 0 meter"
                 tools:text="Distance" />
 
             <TextView
                 android:id="@+id/txt_attentive"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:text="Attentive: 0%"
                 tools:text="Attentive" />
 
+            <p10.p10leapmotion.GifImageView
+                android:id="@+id/GifImageView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:adjustViewBounds="true"/>
 
         </LinearLayout>
-
-        <p10.p10leapmotion.GifImageView
-            android:id="@+id/GifImageView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:adjustViewBounds="true"/>
-
-        <!--<ImageView
-            android:id="@+id/imageView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            app:srcCompat="@mipmap/ic_launcher_round" />-->
-
 
     </LinearLayout>
 

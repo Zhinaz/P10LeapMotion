@@ -62,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements
     public TextView txt_location;
     public TextView txt_distance;
     public TextView txt_attentive;
+    public TextView txt_speed;
     public Button radio_button;
     public Button gps_button;
     public GifImageView gifImageView;
@@ -234,6 +235,7 @@ public class MainActivity extends AppCompatActivity implements
         if (mLastLocation != null) {
             txt_location.setText(String.valueOf(mLastLocation.getLatitude()) + ", "
                     + String.valueOf(mLastLocation.getLongitude()));
+            txt_speed.setText("Speed: " + String.valueOf(mLastLocation.getSpeed()) + " km/h");
         }
 
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
@@ -294,6 +296,7 @@ public class MainActivity extends AppCompatActivity implements
         txt_location = (TextView) findViewById(R.id.txt_location);
         txt_attentive = (TextView) findViewById(R.id.txt_attentive);
         txt_distance = (TextView) findViewById(R.id.txt_distance);
+        txt_speed = (TextView) findViewById(R.id.txt_speed);
 
         radio_button = (Button) findViewById(R.id.btn_radio);
         radio_button.setOnClickListener(new View.OnClickListener() {
@@ -402,9 +405,9 @@ public class MainActivity extends AppCompatActivity implements
             distanceLocationsList.add(location);
         }
 
-        txt_location.setText(String.valueOf(location.getLatitude()) + ", "
-                + String.valueOf(location.getLongitude()) + ", DatSpeed: "
-                + String.valueOf(location.getSpeed()));
+        txt_location.setText("Location: " + String.valueOf(location.getLatitude()) + ", "
+                + String.valueOf(location.getLongitude()));
+        txt_speed.setText("Speed: " + String.valueOf(location.getSpeed()) + " km/h");
     }
 
     private float calculateSpeed(Location location) {
@@ -438,8 +441,8 @@ public class MainActivity extends AppCompatActivity implements
         float totalDistance = calculateDistance();
         float attentivePercentage = calculateAttentivePercentage();
 
-        txt_distance.setText(String.valueOf(totalDistance) + " meter");
-        txt_attentive.setText(String.valueOf(attentivePercentage) + "%");
+        txt_distance.setText("Distance: " + String.valueOf(totalDistance) + " meter");
+        txt_attentive.setText("Attentive: " + String.valueOf(attentivePercentage) + "%");
     }
 
     private float calculateDistance() {
@@ -617,12 +620,11 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-
     private void handleBluetoothMessage(String message) {
         // Example message is: "INATTENTIVE 3.0 1.0" First value is predictedRight, second is predictedLeft
         String[] temp = message.split(" ");
 
-        addToStateList(temp[0]);
+        // addToStateList(temp[0]); // Starts immediate feedback
         if (dataCollecting) {
             attentiveStatesList.add(temp[0]);
 
@@ -670,13 +672,7 @@ public class MainActivity extends AppCompatActivity implements
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
                     System.out.println(mConnectedDeviceName + ":  " + readMessage);
-                    //Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
-
                     handleBluetoothMessage(readMessage);
-                    /*if (dataCollecting) {
-                        attentiveStatesList.add(readMessage);
-                    }*/
-                    //addToStateList(readMessage);
 
                     break;
                 case MESSAGE_DEVICE_NAME:
