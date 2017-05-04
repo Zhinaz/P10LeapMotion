@@ -373,8 +373,8 @@ public class MainActivity extends AppCompatActivity implements
 
     protected void createLocationRequest() {
         mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(10000);
-        mLocationRequest.setFastestInterval(5000);
+        mLocationRequest.setInterval(5000);
+        mLocationRequest.setFastestInterval(2000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
@@ -501,7 +501,6 @@ public class MainActivity extends AppCompatActivity implements
 
     /**
      * Establish connection with other device
-     *
      * @param secure Socket Security type - Secure (true) , Insecure (false)
      */
     private void connectDevice(int deviceNumber, boolean secure) {
