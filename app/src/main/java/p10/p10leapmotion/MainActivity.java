@@ -46,6 +46,7 @@ import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,6 +71,10 @@ public class MainActivity extends AppCompatActivity implements
     public static final String BLUETOOTH_PAIRED_DEVICES = "BLUETOOTH_PAIRED_DEVICES";
     public static final String ATTENTIVE = "ATTENTIVE";
     public static final String INATTENTIVE = "INATTENTIVE";
+    public static final String GOOD = "GOOD";
+    public static final String NEUTRAL = "NEUTRAL";
+    public static final String NEGATIVE = "NEGATIVE";
+
     public static final String TAG = "MainActivity";
 
     public final static int MESSAGE_STATE_CHANGE = 1337;
@@ -576,6 +581,25 @@ public class MainActivity extends AppCompatActivity implements
             }
         }
         //}
+    }
+
+    public void sendWarning(String attentiveType) {
+
+        String warningMessage = "";
+
+        if (attentiveType.equals(GOOD)) {
+            warningMessage = "Good job on that last section";
+        } else if (attentiveType.equals(NEUTRAL)) {
+            warningMessage = "Remember to stay alert";
+        } else if (attentiveType.equals(NEGATIVE)) {
+            warningMessage = "Your driving could be improved";
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            textToSpeech.speak(warningMessage, TextToSpeech.QUEUE_FLUSH, null, null);
+        } else {
+            textToSpeech.speak(warningMessage, TextToSpeech.QUEUE_FLUSH, null);
+        }
     }
 
     private void warnDriver() {
