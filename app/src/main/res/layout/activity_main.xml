@@ -70,30 +70,20 @@
             app:layout_constraintTop_toTopOf="parent">
 
             <TextView
-                android:id="@+id/txt_location"
+                android:id="@+id/txt_score"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                tools:text="Location" />
+                android:textAlignment="center"
+                android:textSize="100sp"
+                tools:text="Score" />
 
             <TextView
-                android:id="@+id/txt_speed"
+                android:id="@+id/txt_message"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                tools:text="Speed" />
-
-            <TextView
-                android:id="@+id/txt_distance"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Distance: 0 meter"
-                tools:text="Distance" />
-
-            <TextView
-                android:id="@+id/txt_attentive"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Attentive: 0%"
-                tools:text="Attentive" />
+                android:textAlignment="center"
+                android:textSize="36sp"
+                tools:text="Message" />
 
             <p10.p10leapmotion.GifImageView
                 android:id="@+id/GifImageView"

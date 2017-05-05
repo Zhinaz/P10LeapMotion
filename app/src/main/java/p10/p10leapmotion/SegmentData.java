@@ -5,11 +5,15 @@ import android.location.Location;
 import java.util.ArrayList;
 
 import static p10.p10leapmotion.MainActivity.ATTENTIVE;
+import static p10.p10leapmotion.MainActivity.GOOD;
 import static p10.p10leapmotion.MainActivity.INATTENTIVE;
+import static p10.p10leapmotion.MainActivity.NEGATIVE;
+import static p10.p10leapmotion.MainActivity.NEUTRAL;
 
 public class SegmentData {
     private Location startLocation;
     private Location endLocation;
+    private float distance;
     private float speed;
     private String attentiveState;
     private float score;
@@ -26,6 +30,8 @@ public class SegmentData {
 
         this.speed = calculateSpeed(startLocation, endLocation);
         this.score = calculateScore(attentivePredStates);
+        this.attentiveState = calculateAttentiveState(score);
+        this.distance = startLocation.distanceTo(endLocation);
     }
 
     private float calculateSpeed(Location startLocation, Location endLocation) {
@@ -52,15 +58,27 @@ public class SegmentData {
 
     private String calculateAttentiveState(float score) {
         if (score >= 80) {
-            return "kæft det lækkert";
+            return GOOD;
         } else if (score >= 60) {
-            return "Decent sager";
-        } else if (score >= 40) {
-            
+            return NEUTRAL;
+        } else {
+            return NEGATIVE;
         }
-
-        return "";
     }
+
+    /*private float calculateDistance() {
+        float totalDistance = 0;
+        Location previousLocation = null;
+        if (distanceLocationsList != null) {
+            for (Location location : distanceLocationsList) {
+                if (previousLocation != null) {
+                    totalDistance += previousLocation.distanceTo(location);
+                }
+                previousLocation = location;
+            }
+        }
+        return totalDistance;
+    }*/
 
     public Location getStartLocation() {
         return startLocation;
@@ -68,6 +86,10 @@ public class SegmentData {
 
     public Location getEndLocation() {
         return endLocation;
+    }
+
+    public float getDistance() {
+        return distance;
     }
 
     public Float getSpeed() {

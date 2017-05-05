@@ -46,7 +46,6 @@ import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
-import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,12 +57,9 @@ public class MainActivity extends AppCompatActivity implements
         GoogleApiClient.OnConnectionFailedListener,
         LocationListener {
 
-    private static final int REQUEST_ENABLE_BT = 137;
     // UI Elements
-    public TextView txt_location;
-    public TextView txt_distance;
-    public TextView txt_attentive;
-    public TextView txt_speed;
+    public TextView txt_score;
+    public TextView txt_message;
     public Button radio_button;
     public Button gps_button;
     public GifImageView gifImageView;
@@ -84,6 +80,7 @@ public class MainActivity extends AppCompatActivity implements
     public final static int MESSAGE_TOAST = 1339;
     public final static int MESSAGE_READ = 1340;
     public final static int MESSAGE_WRITE = 1341;
+    private static final int REQUEST_ENABLE_BT = 137;
 
     private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     private final static int REQUEST_CHECK_SETTINGS = 9001;
@@ -96,14 +93,17 @@ public class MainActivity extends AppCompatActivity implements
     private String mConnectedDeviceName = null;
 
     public static final Integer INSTANCES_BEFORE_WARNING = 4;
+    public static final Integer MINIMUM_METER_DRIVEN = 10;
+    public static final Integer MINIMUM_SPEED = 5;
+
     private ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
     private Queue<String> stateQueue = new CircularFifoQueue<>(INSTANCES_BEFORE_WARNING);
     private boolean increasedIntensity = false;
 
-    private List<String> attentiveStatesList = new ArrayList<>();
-    private List<String> rightPredictedStates = new ArrayList<>();
-    private List<String> leftPredictedStates = new ArrayList<>();
-    private List<SegmentData> routeData = new ArrayList<>();
+    private ArrayList<String> attentivePredictedStates = new ArrayList<>();
+    private ArrayList<String> rightPredictedStates = new ArrayList<>();
+    private ArrayList<String> leftPredictedStates = new ArrayList<>();
+    private ArrayList<SegmentData> routeData = new ArrayList<>();
 
     private List<Location> distanceLocationsList = new ArrayList<>();
     private boolean dataCollecting = false;
@@ -225,7 +225,20 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onLocationChanged(android.location.Location location) {
-        updateDisplay(location);
+        if (mLastLocation == null) {
+            mLastLocation = location;
+        } else if (location.distanceTo(mLastLocation) >= MINIMUM_METER_DRIVEN){
+            SegmentData tempData = new SegmentData(mLastLocation, location, attentivePredictedStates, rightPredictedStates, leftPredictedStates);
+            routeData.add(tempData);
+            attentivePredictedStates.clear();
+            rightPredictedStates.clear();
+            leftPredictedStates.clear();
+        }
+
+        if (location.getSpeed() <= MINIMUM_SPEED && routeData.size() >= 12) {
+            txt_score.setText("" + routeData.get(routeData.size()).getScore());
+            sendWarning(routeData.get(routeData.size()).getAttentiveState());
+        }
     }
 
     @Override
@@ -238,12 +251,6 @@ public class MainActivity extends AppCompatActivity implements
         Log.i(TAG, "Connected to GoogleApiClient");
 
         mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        if (mLastLocation != null) {
-            txt_location.setText(String.valueOf(mLastLocation.getLatitude()) + ", "
-                    + String.valueOf(mLastLocation.getLongitude()));
-            txt_speed.setText("Speed: " + String.valueOf(mLastLocation.getSpeed()) + " km/h");
-        }
-
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
                 .addLocationRequest(mLocationRequest);
 
@@ -295,10 +302,8 @@ public class MainActivity extends AppCompatActivity implements
     private void initialiseComponents() {
         // UI Elements
         gifImageView = (GifImageView) findViewById(R.id.GifImageView);
-        txt_location = (TextView) findViewById(R.id.txt_location);
-        txt_attentive = (TextView) findViewById(R.id.txt_attentive);
-        txt_distance = (TextView) findViewById(R.id.txt_distance);
-        txt_speed = (TextView) findViewById(R.id.txt_speed);
+        txt_score = (TextView) findViewById(R.id.txt_score);
+        txt_message = (TextView) findViewById(R.id.txt_message);
 
         radio_button = (Button) findViewById(R.id.btn_radio);
         radio_button.setOnClickListener(new View.OnClickListener() {
@@ -395,18 +400,6 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    public void updateDisplay(Location location) {
-        mLastLocation = location;
-
-        if (dataCollecting) {
-            distanceLocationsList.add(location);
-        }
-
-        txt_location.setText("Location: " + String.valueOf(location.getLatitude()) + ", "
-                + String.valueOf(location.getLongitude()));
-        txt_speed.setText("Speed: " + String.valueOf(location.getSpeed()) + " km/h");
-    }
-
     private void setupTextToSpeech() {
         textToSpeech = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
@@ -420,7 +413,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private void startCollecting() {
         dataCollecting = true;
-        attentiveStatesList = new ArrayList<>();
+        attentivePredictedStates = new ArrayList<>();
         rightPredictedStates = new ArrayList<>();
         leftPredictedStates = new ArrayList<>();
         distanceLocationsList = new ArrayList<>();
@@ -428,28 +421,12 @@ public class MainActivity extends AppCompatActivity implements
 
     private void stopCollecting() {
         dataCollecting = false;
-        float totalDistance = calculateDistance();
+        //float totalDistance = calculateDistance();
         //float attentivePercentage = calculateAttentivePercentage();
 
-        txt_distance.setText("Distance: " + String.valueOf(totalDistance) + " meter");
+        //txt_distance.setText("Distance: " + String.valueOf(totalDistance) + " meter");
         //txt_attentive.setText("Attentive: " + String.valueOf(attentivePercentage) + "%");
     }
-
-    private float calculateDistance() {
-        float totalDistance = 0;
-        Location previousLocation = null;
-        if (distanceLocationsList != null) {
-            for (Location location : distanceLocationsList) {
-                if (previousLocation != null) {
-                    totalDistance += previousLocation.distanceTo(location);
-                }
-                previousLocation = location;
-            }
-        }
-        return totalDistance;
-    }
-
-
     // end location section
 
     // Start bluetooth section
@@ -553,7 +530,6 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     public void sendWarning(String attentiveType) {
-
         String warningMessage = "";
 
         if (attentiveType.equals(GOOD)) {
@@ -569,6 +545,7 @@ public class MainActivity extends AppCompatActivity implements
         } else {
             textToSpeech.speak(warningMessage, TextToSpeech.QUEUE_FLUSH, null);
         }
+        txt_message.setText(warningMessage);
     }
 
     private void warnDriver() {
@@ -619,7 +596,7 @@ public class MainActivity extends AppCompatActivity implements
 
         // addToStateList(temp[0]); // Starts immediate feedback
         if (dataCollecting) {
-            attentiveStatesList.add(temp[0]);
+            attentivePredictedStates.add(temp[0]);
 
             if (temp.length == 3) {
                 if (!temp[1].equals("-1.0")) {
