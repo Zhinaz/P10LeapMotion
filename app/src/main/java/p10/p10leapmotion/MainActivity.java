@@ -98,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements
     private List<String> attentiveStatesList = new ArrayList<>();
     private List<String> rightPredictedStates = new ArrayList<>();
     private List<String> leftPredictedStates = new ArrayList<>();
+    private List<SegmentData> routeData = new ArrayList<>();
 
     private List<Location> distanceLocationsList = new ArrayList<>();
     private boolean dataCollecting = false;
@@ -390,11 +391,6 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     public void updateDisplay(Location location) {
-        if (mLastLocation != null) {
-            location.setSpeed(calculateSpeed(location));
-        } else {
-            location.setSpeed(0);
-        }
         mLastLocation = location;
 
         if (dataCollecting) {
@@ -404,13 +400,6 @@ public class MainActivity extends AppCompatActivity implements
         txt_location.setText("Location: " + String.valueOf(location.getLatitude()) + ", "
                 + String.valueOf(location.getLongitude()));
         txt_speed.setText("Speed: " + String.valueOf(location.getSpeed()) + " km/h");
-    }
-
-    private float calculateSpeed(Location location) {
-        double timeDiff = location.getTime() - mLastLocation.getTime();
-        double distDiff = location.distanceTo(mLastLocation);
-
-        return (float) (distDiff / timeDiff * 3600);
     }
 
     private void setupTextToSpeech() {
@@ -435,10 +424,10 @@ public class MainActivity extends AppCompatActivity implements
     private void stopCollecting() {
         dataCollecting = false;
         float totalDistance = calculateDistance();
-        float attentivePercentage = calculateAttentivePercentage();
+        //float attentivePercentage = calculateAttentivePercentage();
 
         txt_distance.setText("Distance: " + String.valueOf(totalDistance) + " meter");
-        txt_attentive.setText("Attentive: " + String.valueOf(attentivePercentage) + "%");
+        //txt_attentive.setText("Attentive: " + String.valueOf(attentivePercentage) + "%");
     }
 
     private float calculateDistance() {
@@ -455,23 +444,7 @@ public class MainActivity extends AppCompatActivity implements
         return totalDistance;
     }
 
-    private float calculateAttentivePercentage() {
-        float totalStates = attentiveStatesList.size();
-        float attentiveStates = 0;
 
-        if (totalStates > 0) {
-            for (String state : attentiveStatesList) {
-                if (state.equals(ATTENTIVE)) {
-                    attentiveStates++;
-                }
-            }
-            return (attentiveStates / totalStates) * 100;
-        } else {
-            Log.i(TAG, "Calculate: totalStaes is empty");
-        }
-
-        return 0;
-    }
     // end location section
 
     // Start bluetooth section
