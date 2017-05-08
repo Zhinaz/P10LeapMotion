@@ -6,7 +6,6 @@ import java.util.ArrayList;
 
 import static p10.p10leapmotion.MainActivity.ATTENTIVE;
 import static p10.p10leapmotion.MainActivity.GOOD;
-import static p10.p10leapmotion.MainActivity.INATTENTIVE;
 import static p10.p10leapmotion.MainActivity.NEGATIVE;
 import static p10.p10leapmotion.MainActivity.NEUTRAL;
 
@@ -66,6 +65,20 @@ public class SegmentData {
         }
     }
 
+    private String combineArrayList(ArrayList<String> list) {
+        String combinedString = "";
+        Boolean firstElement = true;
+        for (String element : list) {
+            if (firstElement) {
+                combinedString = element;
+                firstElement = false;
+            } else {
+                combinedString = combinedString + "," + element;
+            }
+        }
+        return combinedString;
+    }
+
     /*private float calculateDistance() {
         float totalDistance = 0;
         Location previousLocation = null;
@@ -108,12 +121,24 @@ public class SegmentData {
         return attentivePredStates;
     }
 
+    public String getAttentivePredStatesString() {
+        return combineArrayList(attentivePredStates);
+    }
+
     public ArrayList<String> getRightPredStates() {
         return rightPredStates;
     }
 
+    public String getRightPredStatesString() {
+        return combineArrayList(rightPredStates);
+    }
+
     public ArrayList<String> getLeftPredStates() {
         return leftPredStates;
+    }
+
+    public String getLeftPredStatesString() {
+        return combineArrayList(leftPredStates);
     }
 
     public String toString() {

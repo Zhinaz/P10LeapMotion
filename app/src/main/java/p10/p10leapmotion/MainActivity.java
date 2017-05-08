@@ -47,7 +47,13 @@ import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Queue;
@@ -105,7 +111,6 @@ public class MainActivity extends AppCompatActivity implements
     private ArrayList<String> leftPredictedStates = new ArrayList<>();
     private ArrayList<SegmentData> routeData = new ArrayList<>();
 
-    private List<Location> distanceLocationsList = new ArrayList<>();
     private boolean dataCollecting = false;
 
     private GoogleApiClient mGoogleApiClient;
@@ -241,6 +246,8 @@ public class MainActivity extends AppCompatActivity implements
         if (location.getSpeed() <= MINIMUM_SPEED && routeData.size() >= 12) {
             txt_score.setText("" + routeData.get(routeData.size()-1).getScore());
             sendWarning(routeData.get(routeData.size()).getAttentiveState());
+            writeToFile(routeData);
+            routeData.clear();
         }
     }
 
@@ -419,7 +426,6 @@ public class MainActivity extends AppCompatActivity implements
         attentivePredictedStates = new ArrayList<>();
         rightPredictedStates = new ArrayList<>();
         leftPredictedStates = new ArrayList<>();
-        distanceLocationsList = new ArrayList<>();
     }
 
     private void stopCollecting() {
@@ -430,7 +436,34 @@ public class MainActivity extends AppCompatActivity implements
         //txt_distance.setText("Distance: " + String.valueOf(totalDistance) + " meter");
         //txt_attentive.setText("Attentive: " + String.valueOf(attentivePercentage) + "%");
     }
-    // end location section
+
+    private void writeToFile(ArrayList<SegmentData> routeList) {
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy-hh:mm:ss");
+            String currentTime = dateFormat.format(new Date());
+            String fileName = "route-" + currentTime;
+
+            FileWriter fw = new FileWriter(new File("/routes/" + fileName + ".txt"));
+            for (SegmentData segment : routeList) {
+                String dataString =
+                        segment.getStartLocation() + " " +
+                        segment.getEndLocation() + " " +
+                        segment.getDistance() + " " +
+                        segment.getSpeed() + " " +
+                        segment.getAttentiveState() + " " +
+                        segment.getScore() + " " +
+                        segment.getAttentivePredStatesString()  + " " +
+                        segment.getRightPredStatesString() + " " +
+                        segment.getLeftPredStatesString();
+
+                fw.write(String.format(dataString + "%n"));
+            }
+            fw.close();
+        }
+        catch (IOException e) {
+            Log.e("Exception", "File write failed: " + e.toString());
+        }
+    }
 
     // Start bluetooth section
     // Create a BroadcastReceiver for ACTION_FOUND.
