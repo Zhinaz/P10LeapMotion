@@ -247,15 +247,17 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         if (location.getSpeed() <= MINIMUM_SPEED && routeData.size() >= 12) {
+            double calculatedScore = 0;
             for (SegmentData segment : routeData) {
-                
+                calculatedScore =+ segment.getScore();
             }
-            txt_score.setText("" + routeData.get(routeData.size() - 1).getScore());
-            sendWarning(routeData.get(routeData.size() - 1).getAttentiveState());
+            calculatedScore = calculatedScore / routeData.size();
+            txt_score.setText(String.valueOf(calculatedScore));
+
+            sendWarning(calculateAttentiveState((float)calculatedScore));
             writeToFile(routeData);
             routeData.clear();
         }
-
         mLastLocation = location;
     }
 
@@ -600,6 +602,16 @@ public class MainActivity extends AppCompatActivity implements
             textToSpeech.speak(warningMessage, TextToSpeech.QUEUE_FLUSH, null);
         }
         txt_message.setText(warningMessage);
+    }
+
+    private String calculateAttentiveState(float score) {
+        if (score >= 80) {
+            return GOOD;
+        } else if (score >= 60) {
+            return NEUTRAL;
+        } else {
+            return NEGATIVE;
+        }
     }
 
     private void warnDriver() {
