@@ -15,6 +15,7 @@ import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.speech.tts.TextToSpeech;
@@ -47,14 +48,13 @@ import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 import java.util.Queue;
 
@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements
     private String mConnectedDeviceName = null;
 
     public static final Integer INSTANCES_BEFORE_WARNING = 4;
-    public static final Integer MINIMUM_METER_DRIVEN = 10;
+    public static final double MINIMUM_METER_DRIVEN = 0.1; // 10 / Integer
     public static final Integer MINIMUM_SPEED = 5;
 
     private ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
@@ -114,7 +114,7 @@ public class MainActivity extends AppCompatActivity implements
     private boolean dataCollecting = false;
 
     private GoogleApiClient mGoogleApiClient;
-    private Location mLastLocation;
+    private Location mLastLocation = null;
     private LocationRequest mLocationRequest = null;
     private boolean mRequestingLocationUpdates = false;
 
@@ -230,22 +230,30 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onLocationChanged(android.location.Location location) {
-        if (mLastLocation == null) {
-            mLastLocation = location;
-        } else if (location.distanceTo(mLastLocation) >= MINIMUM_METER_DRIVEN){
+        Log.e(TAG, "~Location changed: " + location.getLatitude() + "/" + location.getLongitude() + " dist: " + location.distanceTo(mLastLocation));
+        if (location.distanceTo(mLastLocation) >= MINIMUM_METER_DRIVEN){
+            Log.e(TAG, "~Data added~");
+            Toast.makeText(this, "Data added", Toast.LENGTH_SHORT).show();
+
             SegmentData tempData = new SegmentData(mLastLocation, location, attentivePredictedStates, rightPredictedStates, leftPredictedStates);
             routeData.add(tempData);
+
             attentivePredictedStates.clear();
             rightPredictedStates.clear();
             leftPredictedStates.clear();
         }
 
         if (location.getSpeed() <= MINIMUM_SPEED && routeData.size() >= 12) {
-            txt_score.setText("" + routeData.get(routeData.size()).getScore());
-            sendWarning(routeData.get(routeData.size()).getAttentiveState());
+            for (SegmentData segment : routeData) {
+                
+            }
+            txt_score.setText("" + routeData.get(routeData.size() - 1).getScore());
+            sendWarning(routeData.get(routeData.size() - 1).getAttentiveState());
             writeToFile(routeData);
             routeData.clear();
         }
+
+        mLastLocation = location;
     }
 
     @Override
@@ -312,16 +320,17 @@ public class MainActivity extends AppCompatActivity implements
         txt_score = (TextView) findViewById(R.id.txt_score);
         txt_message = (TextView) findViewById(R.id.txt_message);
 
-        radio_button = (Button) findViewById(R.id.btn_radio);
+        radio_button = (Button) findViewById(R.id.btn_start);
         radio_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
                 startCollecting();
+                writeToFile(routeData);
             }
         });
 
-        gps_button = (Button) findViewById(R.id.btn_gps);
+        gps_button = (Button) findViewById(R.id.btn_stop);
         gps_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -440,11 +449,19 @@ public class MainActivity extends AppCompatActivity implements
             String currentTime = dateFormat.format(new Date());
             String fileName = "route-" + currentTime;
 
-            FileWriter fw = new FileWriter(new File("/routes/" + fileName + ".txt"));
+            File path = Environment.getExternalStorageDirectory();
+            File root = new File(path, getApplicationContext().getPackageName());
+            if (!root.exists()) {
+                root.mkdirs();
+            }
+            Log.e(TAG, "File path: " + path);
+            FileWriter fw = new FileWriter(new File(root, fileName + ".txt"));
+            BufferedWriter bw = new BufferedWriter(fw);
+
             for (SegmentData segment : routeList) {
                 String dataString =
-                        segment.getStartLocation() + " " +
-                        segment.getEndLocation() + " " +
+                        segment.getStartLocation().getLatitude() + "," + segment.getStartLocation().getLongitude() + " " +
+                        segment.getEndLocation().getLatitude() + "," + segment.getEndLocation().getLongitude() + " " +
                         segment.getDistance() + " " +
                         segment.getSpeed() + " " +
                         segment.getAttentiveState() + " " +
@@ -453,9 +470,10 @@ public class MainActivity extends AppCompatActivity implements
                         segment.getRightPredStatesString() + " " +
                         segment.getLeftPredStatesString();
 
-                fw.write(String.format(dataString + "%n"));
+                Log.e(TAG, "Data test: " + dataString);
+                bw.write(String.format(dataString + "%n"));
             }
-            fw.close();
+            bw.close();
         }
         catch (IOException e) {
             Log.e("Exception", "File write failed: " + e.toString());

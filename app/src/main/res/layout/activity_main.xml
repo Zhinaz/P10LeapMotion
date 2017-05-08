@@ -38,7 +38,7 @@
             app:layout_constraintTop_toTopOf="parent">
 
             <Button
-                android:id="@+id/btn_radio"
+                android:id="@+id/btn_start"
                 android:layout_width="75dp"
                 android:layout_height="75dp"
                 android:text="Start"
@@ -46,7 +46,7 @@
                 tools:layout_editor_absoluteY="16dp" />
 
             <Button
-                android:id="@+id/btn_gps"
+                android:id="@+id/btn_stop"
                 android:layout_width="75dp"
                 android:layout_height="75dp"
                 android:text="Stop"
