@@ -1,6 +1,7 @@
 package p10.p10leapmotion;
 
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.location.Location;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -14,11 +15,14 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
 
 import static p10.p10leapmotion.MainActivity.ATTENTIVE;
+import static p10.p10leapmotion.MainActivity.GOOD;
 import static p10.p10leapmotion.MainActivity.INATTENTIVE;
+import static p10.p10leapmotion.MainActivity.NEUTRAL;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -80,8 +84,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         loc3.setLongitude(11.9);
         ArrayList<String> attentivePredictedStates2 = new ArrayList<>();
         attentivePredictedStates2.add(ATTENTIVE);
-        attentivePredictedStates2.add(INATTENTIVE);
-        attentivePredictedStates2.add(INATTENTIVE);
+        attentivePredictedStates2.add(ATTENTIVE);
+        attentivePredictedStates2.add(ATTENTIVE);
         attentivePredictedStates2.add(INATTENTIVE);
         attentivePredictedStates2.add(INATTENTIVE);
         ArrayList<String> rightPredictedStates2 = new ArrayList<>();
@@ -96,7 +100,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         leftPredictedStates2.add("2.0");
         leftPredictedStates2.add("2.0");
         leftPredictedStates2.add("2.0");
-        SegmentData tempData2 = new SegmentData(loc2, loc3, attentivePredictedStates, rightPredictedStates, leftPredictedStates);
+        SegmentData tempData2 = new SegmentData(loc2, loc3, attentivePredictedStates2, rightPredictedStates2, leftPredictedStates2);
 
         mapData.add(tempData);
         mapData.add(tempData2);
@@ -104,20 +108,47 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         int i = 0;
         int n = mapData.size();
 
+        PolylineOptions optionsGreen = new PolylineOptions();
+        optionsGreen.width(5);
+        optionsGreen.visible(true);
+        optionsGreen.color(Color.GREEN);
+        PolylineOptions optionsYellow = new PolylineOptions();
+        optionsYellow.width(5);
+        optionsYellow.visible(true);
+        optionsYellow.color(Color.YELLOW);
+        PolylineOptions optionsRed = new PolylineOptions();
+        optionsRed.width(5);
+        optionsRed.visible(true);
+        optionsRed.color(Color.RED);
+
         for (SegmentData s : mapData) {
 
-            LatLng temp = new LatLng(s.getStartLocation().getLatitude(), s.getStartLocation().getLongitude());
-            mMap.addMarker(new MarkerOptions().position(temp).title(s.toString()));
+            LatLng tempStart = new LatLng(s.getStartLocation().getLatitude(), s.getStartLocation().getLongitude());
+            LatLng tempEnd = new LatLng(s.getEndLocation().getLatitude(), s.getEndLocation().getLongitude());
+            mMap.addMarker(new MarkerOptions().position(tempStart));
 
             if (i == n-1) {
-                temp = new LatLng(s.getEndLocation().getLatitude(), s.getEndLocation().getLongitude());
-                mMap.addMarker(new MarkerOptions().position(temp).title(s.toString()));
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(temp));
+                mMap.addMarker(new MarkerOptions().position(tempEnd));
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(tempEnd));
+            }
+
+            if (s.getAttentiveState().equals(GOOD)) {
+                optionsGreen.add(tempStart);
+                optionsGreen.add(tempEnd);
+            } else if (s.getAttentiveState().equals(NEUTRAL)) {
+                optionsYellow.add(tempStart);
+                optionsYellow.add(tempEnd);
+            } else {
+                optionsRed.add(tempStart);
+                optionsRed.add(tempEnd);
             }
 
             i++;
         }
 
+        mMap.addPolyline(optionsGreen);
+        mMap.addPolyline(optionsYellow);
+        mMap.addPolyline(optionsRed);
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
@@ -128,7 +159,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
                         builder
                                 .setTitle(R.string.show_information_dialog_title)
-                                .setMessage(s.toString() + "\n" + s.additionalDataString())
+                                .setMessage("\n" + s.scoreString() + "\n\n" + s.additionalDataString())
                                 .setPositiveButton(R.string.dialog_ok, new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
@@ -137,6 +168,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 });
                         builder.create().show();
                         break;
+                    } else if (s == mapData.get(mapData.size()-1)) {
+                        Toast.makeText(MapsActivity.this, "Last location have no value!", Toast.LENGTH_SHORT).show();
                     }
                 }
 

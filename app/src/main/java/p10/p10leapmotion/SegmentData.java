@@ -142,7 +142,11 @@ public class SegmentData {
     }
 
     public String toString() {
-        return attentiveState + " \t" + score;
+        return attentiveState + " \t" + String.format("%s", score);
+    }
+
+    public String scoreString() {
+        return "Score: \t\t\t\t\t\t\t" + (int)score;
     }
 
     public String additionalDataString() {
@@ -177,12 +181,12 @@ public class SegmentData {
         }
 
         return "Left: \n"
-                + "Steering: \t\t\t" + leftSteeringCounter + "/" + leftMax + "\n"
-                + "Rest: \t\t\t" + leftRestCounter + "/" + leftMax
+                + "Steering: \t\t\t\t\t" + leftSteeringCounter + "/" + leftMax + "\n"
+                + "Rest: \t\t\t\t\t\t\t\t" + leftRestCounter + "/" + leftMax
                 + "\n\n" + "Right: \n"
-                + "Steering: \t\t\t" + rightSteeringCounter + "/" + rightMax + "\n"
-                + "Rest: \t\t\t" + rightRestCounter + "/" + rightMax + "\n"
+                + "Steering: \t\t\t\t\t" + rightSteeringCounter + "/" + rightMax + "\n"
+                + "Rest: \t\t\t\t\t\t\t\t" + rightRestCounter + "/" + rightMax + "\n"
                 + "Secondary: \t\t\t" + rightSecondaryCounter + "/" + rightMax + "\n"
-                + "Gear: \t\t\t" + rightGearCounter + "/" + rightMax;
+                + "Gear: \t\t\t\t\t\t\t\t" + rightGearCounter + "/" + rightMax;
     }
 }
