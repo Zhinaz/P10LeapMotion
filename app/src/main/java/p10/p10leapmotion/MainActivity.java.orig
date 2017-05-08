@@ -247,11 +247,16 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         if (location.getSpeed() <= MINIMUM_SPEED && routeData.size() >= 12) {
+<<<<<<< HEAD
             for (SegmentData segment : routeData) {
                 
             }
             txt_score.setText("" + routeData.get(routeData.size() - 1).getScore());
             sendWarning(routeData.get(routeData.size() - 1).getAttentiveState());
+=======
+            txt_score.setText("" + routeData.get(routeData.size()-1).getScore());
+            sendWarning(routeData.get(routeData.size()).getAttentiveState());
+>>>>>>> f749b03b52fce4a07e556999d05eded9ec57501b
             writeToFile(routeData);
             routeData.clear();
         }
