@@ -48,10 +48,13 @@ import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -66,8 +69,8 @@ public class MainActivity extends AppCompatActivity implements
     // UI Elements
     public TextView txt_score;
     public TextView txt_message;
-    public Button radio_button;
-    public Button gps_button;
+    public Button startButton;
+    public Button stopButton;
     public GifImageView gifImageView;
 
     public static final String BLUETOOTH_PAIRED_DEVICES = "BLUETOOTH_PAIRED_DEVICES";
@@ -118,6 +121,8 @@ public class MainActivity extends AppCompatActivity implements
     private LocationRequest mLocationRequest = null;
     private boolean mRequestingLocationUpdates = false;
 
+    private File file;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -144,6 +149,66 @@ public class MainActivity extends AppCompatActivity implements
 
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(bluetoothReceiver, filter);
+
+        Location loc = new Location("Dummy variable");
+        loc.setLatitude(57);
+        loc.setLongitude(9.9);
+        Location loc2 = new Location("Dummy variable 2");
+        loc2.setLatitude(58);
+        loc2.setLongitude(10.9);
+        ArrayList<String> attentivePredictedStates = new ArrayList<>();
+        attentivePredictedStates.add(ATTENTIVE);
+        attentivePredictedStates.add(ATTENTIVE);
+        attentivePredictedStates.add(ATTENTIVE);
+        attentivePredictedStates.add(ATTENTIVE);
+        attentivePredictedStates.add(ATTENTIVE);
+        ArrayList<String> rightPredictedStates = new ArrayList<>();
+        rightPredictedStates.add("1.0");
+        rightPredictedStates.add("1.0");
+        rightPredictedStates.add("2.0");
+        rightPredictedStates.add("2.0");
+        rightPredictedStates.add("3.0");
+        ArrayList<String> leftPredictedStates = new ArrayList<>();
+        leftPredictedStates.add("1.0");
+        leftPredictedStates.add("1.0");
+        leftPredictedStates.add("1.0");
+        leftPredictedStates.add("1.0");
+        leftPredictedStates.add("2.0");
+        SegmentData tempData = new SegmentData(loc, loc2, attentivePredictedStates, rightPredictedStates, leftPredictedStates);
+
+        Location loc3 = new Location("Dummy variable 3");
+        loc3.setLatitude(59);
+        loc3.setLongitude(11.9);
+        ArrayList<String> attentivePredictedStates2 = new ArrayList<>();
+        attentivePredictedStates2.add(ATTENTIVE);
+        attentivePredictedStates2.add(ATTENTIVE);
+        attentivePredictedStates2.add(ATTENTIVE);
+        attentivePredictedStates2.add(INATTENTIVE);
+        attentivePredictedStates2.add(INATTENTIVE);
+        ArrayList<String> rightPredictedStates2 = new ArrayList<>();
+        rightPredictedStates2.add("1.0");
+        rightPredictedStates2.add("4.0");
+        rightPredictedStates2.add("3.0");
+        rightPredictedStates2.add("3.0");
+        rightPredictedStates2.add("3.0");
+        ArrayList<String> leftPredictedStates2 = new ArrayList<>();
+        leftPredictedStates2.add("1.0");
+        leftPredictedStates2.add("2.0");
+        leftPredictedStates2.add("2.0");
+        leftPredictedStates2.add("2.0");
+        leftPredictedStates2.add("2.0");
+        SegmentData tempData2 = new SegmentData(loc2, loc3, attentivePredictedStates2, rightPredictedStates2, leftPredictedStates2);
+
+        ArrayList<SegmentData> testSager = new ArrayList<>();
+        testSager.add(tempData);
+        testSager.add(tempData2);
+
+        //ArrayList<SegmentData> trololo = readDirectory();
+        //writeToFile(testSager);
+        System.out.print("");
+
+        //createNewDataFile();
+        //proevAtSkrivNoget();
     }
 
     @Override
@@ -224,7 +289,11 @@ public class MainActivity extends AppCompatActivity implements
                 ensureDiscoverable();
                 return true;
             case R.id.map:
+                File path = Environment.getExternalStorageDirectory();
+                File root = new File(path, getApplicationContext().getPackageName());
+
                 Intent intent = new Intent(this, MapsActivity.class);
+                intent.putExtra("root", root);
                 startActivity(intent);
             default:
                 return super.onOptionsItemSelected(item);
@@ -234,26 +303,29 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onLocationChanged(android.location.Location location) {
         Log.e(TAG, "~Location changed: " + location.getLatitude() + "/" + location.getLongitude() + " dist: " + location.distanceTo(mLastLocation));
-        if (location.distanceTo(mLastLocation) >= MINIMUM_METER_DRIVEN){
-            Log.e(TAG, "~Data added~");
-            Toast.makeText(this, "Data added", Toast.LENGTH_SHORT).show();
+        if (dataCollecting) {
+            if (location.distanceTo(mLastLocation) >= MINIMUM_METER_DRIVEN) {
+                Log.e(TAG, "~Data added~");
+                Toast.makeText(this, "Data added", Toast.LENGTH_SHORT).show();
 
-            SegmentData tempData = new SegmentData(mLastLocation, location, attentivePredictedStates, rightPredictedStates, leftPredictedStates);
-            routeData.add(tempData);
+                SegmentData tempData = new SegmentData(mLastLocation, location, attentivePredictedStates, rightPredictedStates, leftPredictedStates);
+                routeData.add(tempData);
 
-            attentivePredictedStates.clear();
-            rightPredictedStates.clear();
-            leftPredictedStates.clear();
-        }
-
-        if (location.getSpeed() <= MINIMUM_SPEED && routeData.size() >= 12) {
-            for (SegmentData segment : routeData) {
-                
+                attentivePredictedStates.clear();
+                rightPredictedStates.clear();
+                leftPredictedStates.clear();
             }
-            txt_score.setText("" + routeData.get(routeData.size() - 1).getScore());
-            sendWarning(routeData.get(routeData.size() - 1).getAttentiveState());
-            writeToFile(routeData);
-            routeData.clear();
+
+
+            if (location.getSpeed() <= MINIMUM_SPEED && routeData.size() >= 12) {
+                for (SegmentData segment : routeData) {
+
+                }
+                txt_score.setText("" + routeData.get(routeData.size() - 1).getScore());
+                sendWarning(routeData.get(routeData.size() - 1).getAttentiveState());
+                writeToFile(routeData);
+                routeData.clear();
+            }
         }
 
         mLastLocation = location;
@@ -323,18 +395,18 @@ public class MainActivity extends AppCompatActivity implements
         txt_score = (TextView) findViewById(R.id.txt_score);
         txt_message = (TextView) findViewById(R.id.txt_message);
 
-        radio_button = (Button) findViewById(R.id.btn_start);
-        radio_button.setOnClickListener(new View.OnClickListener() {
+        startButton = (Button) findViewById(R.id.btn_start);
+        startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
                 startCollecting();
-                writeToFile(routeData);
+                //writeToFile(routeData);
             }
         });
 
-        gps_button = (Button) findViewById(R.id.btn_stop);
-        gps_button.setOnClickListener(new View.OnClickListener() {
+        stopButton = (Button) findViewById(R.id.btn_stop);
+        stopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 gifImageView.setGifImageResource(R.drawable.cats);
@@ -439,6 +511,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private void stopCollecting() {
         dataCollecting = false;
+        writeToFile(routeData);
         //float totalDistance = calculateDistance();
         //float attentivePercentage = calculateAttentivePercentage();
 
@@ -446,9 +519,100 @@ public class MainActivity extends AppCompatActivity implements
         //txt_attentive.setText("Attentive: " + String.valueOf(attentivePercentage) + "%");
     }
 
+    private ArrayList<SegmentData> readDirectory() {
+        ArrayList<SegmentData> tempList = new ArrayList<>();
+
+        File path = Environment.getExternalStorageDirectory();
+        File root = new File(path, getApplicationContext().getPackageName());
+
+        //57.0,9.9 58.0,10.9 126478.29 Infinity GOOD 100.0 (ATTENTIVE,ATTENTIVE,ATTENTIVE,ATTENTIVE,ATTENTIVE) (1.0,1.0,2.0,2.0,3.0) (1.0,1.0,1.0,1.0,2.0)
+        //58.0,10.9 59.0,11.9 125720.805 Infinity NEUTRAL 60.000004 (ATTENTIVE,ATTENTIVE,ATTENTIVE,INATTENTIVE,INATTENTIVE) (1.0,4.0,3.0,3.0,3.0) (1.0,2.0,2.0,2.0,2.0)
+
+        for (File f : root.listFiles()) {
+            System.out.println(f.getName());
+
+            try {
+                BufferedReader br = new BufferedReader(new FileReader(f));
+                String line = "";
+
+                while ((line = br.readLine()) != null) {
+                    String[] temp = line.split(" ");
+                    System.out.println(line);
+
+                    // Start location
+                    String[] startLoc = temp[0].split(",");
+                    Location startLocation = new Location("Temp");
+                    startLocation.setLatitude(Double.parseDouble(startLoc[0]));
+                    startLocation.setLongitude(Double.parseDouble(startLoc[1]));
+
+                    // End location
+                    String[] endLoc = temp[1].split(",");
+                    Location endLocation = new Location("Temp");
+                    endLocation.setLatitude(Double.parseDouble(endLoc[0]));
+                    endLocation.setLongitude(Double.parseDouble(endLoc[1]));
+
+                    // distance and speed
+                    float dist = Float.parseFloat(temp[2]);
+                    float speed = 0.0f;
+                    if (!temp[3].equals("Infinity")) {
+                        speed = Float.parseFloat(temp[3]);
+                    }
+
+                    // Attentive state and score
+                    String attentiveState = temp[4];
+                    float score = Float.parseFloat(temp[5]);
+
+                    // Attentive list
+                    String[] attentiveness = temp[6].replace("(", "").replace(")", "").split(",");
+                    ArrayList<String> attentiveList = new ArrayList<>();
+                    for (String s : attentiveness) {
+                        attentiveList.add(s);
+                    }
+
+                    // right list
+                    String[] rightPreds = temp[7].replace("(", "").replace(")", "").split(",");
+                    ArrayList<String> rightPredictions = new ArrayList<>();
+                    for (String s : rightPreds) {
+                        rightPredictions.add(s);
+                    }
+
+                    // left list
+                    String[] leftPreds = temp[8].replace("(", "").replace(")", "").split(",");
+                    ArrayList<String> leftPredictions = new ArrayList<>();
+                    for (String s : leftPreds) {
+                        leftPredictions.add(s);
+                    }
+
+                    SegmentData tempSegment = new SegmentData(startLocation, endLocation, attentiveList, rightPredictions, leftPredictions);
+                    tempList.add(tempSegment);
+                }
+                br.close();
+            } catch (IOException e) {
+                //You'll need to add proper error handling here
+            }
+        }
+
+        return tempList;
+    }
+
+    private void createNewDataFile() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM-hh:mm:ss");
+        String currentTime = dateFormat.format(new Date());
+        String fileName = "route-" + currentTime;
+
+        File path = Environment.getExternalStorageDirectory();
+        File root = new File(path, getApplicationContext().getPackageName());
+        if (!root.exists()) {
+            root.mkdirs();
+        }
+        Log.e(TAG, "File path: " + path);
+        Log.e(TAG, "File root: " + root);
+        file = new File(root, fileName + ".txt");
+    }
+
     private void writeToFile(ArrayList<SegmentData> routeList) {
         try {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy-hh:mm:ss");
+            /*SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM-hh:mm:ss");
             String currentTime = dateFormat.format(new Date());
             String fileName = "route-" + currentTime;
 
@@ -458,27 +622,29 @@ public class MainActivity extends AppCompatActivity implements
                 root.mkdirs();
             }
             Log.e(TAG, "File path: " + path);
-            FileWriter fw = new FileWriter(new File(root, fileName + ".txt"));
+            Log.e(TAG, "File root: " + root);
+            */
+            FileWriter fw = new FileWriter(file);
+
             BufferedWriter bw = new BufferedWriter(fw);
 
             for (SegmentData segment : routeList) {
                 String dataString =
                         segment.getStartLocation().getLatitude() + "," + segment.getStartLocation().getLongitude() + " " +
-                        segment.getEndLocation().getLatitude() + "," + segment.getEndLocation().getLongitude() + " " +
-                        segment.getDistance() + " " +
-                        segment.getSpeed() + " " +
-                        segment.getAttentiveState() + " " +
-                        segment.getScore() + " " +
-                        segment.getAttentivePredStatesString()  + " " +
-                        segment.getRightPredStatesString() + " " +
-                        segment.getLeftPredStatesString();
+                                segment.getEndLocation().getLatitude() + "," + segment.getEndLocation().getLongitude() + " " +
+                                segment.getDistance() + " " +
+                                segment.getSpeed() + " " +
+                                segment.getAttentiveState() + " " +
+                                segment.getScore() + " (" +
+                                segment.getAttentivePredStatesString() + ") (" +
+                                segment.getRightPredStatesString() + ") (" +
+                                segment.getLeftPredStatesString() + ")";
 
                 Log.e(TAG, "Data test: " + dataString);
                 bw.write(String.format(dataString + "%n"));
             }
             bw.close();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             Log.e("Exception", "File write failed: " + e.toString());
         }
     }
@@ -509,6 +675,7 @@ public class MainActivity extends AppCompatActivity implements
 
     /**
      * Establish connection with other device
+     *
      * @param secure Socket Security type - Secure (true) , Insecure (false)
      */
     private void connectDevice(int deviceNumber, boolean secure) {
