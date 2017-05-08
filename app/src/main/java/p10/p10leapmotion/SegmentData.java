@@ -115,4 +115,49 @@ public class SegmentData {
     public ArrayList<String> getLeftPredStates() {
         return leftPredStates;
     }
+
+    public String toString() {
+        return attentiveState + " \t" + score;
+    }
+
+    public String additionalDataString() {
+        int leftSteeringCounter = 0;
+        int leftRestCounter = 0;
+        int leftMax = leftPredStates.size();
+
+        for (String s : leftPredStates) {
+            if (s.equals("1.0")) {
+                leftSteeringCounter++;
+            } else if (s.equals("2.0")) {
+                leftRestCounter++;
+            }
+        }
+
+        int rightSteeringCounter = 0;
+        int rightRestCounter = 0;
+        int rightSecondaryCounter = 0;
+        int rightGearCounter = 0;
+        int rightMax = rightPredStates.size();
+
+        for (String s : rightPredStates) {
+            if (s.equals("1.0")) {
+                rightSteeringCounter++;
+            } else if (s.equals("2.0")) {
+                rightRestCounter++;
+            } else if (s.equals("3.0")) {
+                rightSteeringCounter++;
+            } else if (s.equals("4.0")) {
+                rightGearCounter++;
+            }
+        }
+
+        return "Left: \n"
+                + "Steering: \t\t\t" + leftSteeringCounter + "/" + leftMax + "\n"
+                + "Rest: \t\t\t" + leftRestCounter + "/" + leftMax
+                + "\n\n" + "Right: \n"
+                + "Steering: \t\t\t" + rightSteeringCounter + "/" + rightMax + "\n"
+                + "Rest: \t\t\t" + rightRestCounter + "/" + rightMax + "\n"
+                + "Secondary: \t\t\t" + rightSecondaryCounter + "/" + rightMax + "\n"
+                + "Gear: \t\t\t" + rightGearCounter + "/" + rightMax;
+    }
 }

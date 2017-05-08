@@ -218,6 +218,9 @@ public class MainActivity extends AppCompatActivity implements
             case R.id.discover:
                 ensureDiscoverable();
                 return true;
+            case R.id.map:
+                Intent intent = new Intent(this, MapsActivity.class);
+                startActivity(intent);
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -236,7 +239,7 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         if (location.getSpeed() <= MINIMUM_SPEED && routeData.size() >= 12) {
-            txt_score.setText("" + routeData.get(routeData.size()).getScore());
+            txt_score.setText("" + routeData.get(routeData.size()-1).getScore());
             sendWarning(routeData.get(routeData.size()).getAttentiveState());
         }
     }

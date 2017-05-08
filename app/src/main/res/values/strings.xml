@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">P10LeapMotion</string>
     <string name="google_maps_key">AIzaSyB0ThpI7OeuUnrCQVUIjvs4pZeyjfeKFmE</string>
+    <string name="title_activity_maps">Map</string>
+
+    <string name="show_information_dialog_title">Location details</string>
+    <string name="dialog_ok">OK</string>
 </resources>
