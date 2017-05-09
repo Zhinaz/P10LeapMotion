@@ -54,7 +54,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -102,7 +101,7 @@ public class MainActivity extends AppCompatActivity implements
     private String mConnectedDeviceName = null;
 
     public static final Integer INSTANCES_BEFORE_WARNING = 4;
-    public static final double MINIMUM_METER_DRIVEN = 0.1; // 10 / Integer
+    public static final double MINIMUM_METER_DRIVEN = 10;
     public static final Integer MINIMUM_SPEED = 5;
 
     private ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
@@ -115,13 +114,12 @@ public class MainActivity extends AppCompatActivity implements
     private ArrayList<SegmentData> routeData = new ArrayList<>();
 
     private boolean dataCollecting = false;
+    private File file;
 
     private GoogleApiClient mGoogleApiClient;
     private Location mLastLocation = null;
     private LocationRequest mLocationRequest = null;
     private boolean mRequestingLocationUpdates = false;
-
-    private File file;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -328,8 +326,8 @@ public class MainActivity extends AppCompatActivity implements
                 writeToFile(routeData);
                 routeData.clear();
             }
-            mLastLocation = location;
         }
+        mLastLocation = location;
     }
 
     @Override
@@ -505,6 +503,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private void startCollecting() {
         dataCollecting = true;
+        createNewDataFile();
         attentivePredictedStates = new ArrayList<>();
         rightPredictedStates = new ArrayList<>();
         leftPredictedStates = new ArrayList<>();
@@ -513,11 +512,6 @@ public class MainActivity extends AppCompatActivity implements
     private void stopCollecting() {
         dataCollecting = false;
         writeToFile(routeData);
-        //float totalDistance = calculateDistance();
-        //float attentivePercentage = calculateAttentivePercentage();
-
-        //txt_distance.setText("Distance: " + String.valueOf(totalDistance) + " meter");
-        //txt_attentive.setText("Attentive: " + String.valueOf(attentivePercentage) + "%");
     }
 
     private ArrayList<SegmentData> readDirectory() {
@@ -613,20 +607,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private void writeToFile(ArrayList<SegmentData> routeList) {
         try {
-            /*SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM-hh:mm:ss");
-            String currentTime = dateFormat.format(new Date());
-            String fileName = "route-" + currentTime;
-
-            File path = Environment.getExternalStorageDirectory();
-            File root = new File(path, getApplicationContext().getPackageName());
-            if (!root.exists()) {
-                root.mkdirs();
-            }
-            Log.e(TAG, "File path: " + path);
-            Log.e(TAG, "File root: " + root);
-            */
             FileWriter fw = new FileWriter(file);
-
             BufferedWriter bw = new BufferedWriter(fw);
 
             for (SegmentData segment : routeList) {
