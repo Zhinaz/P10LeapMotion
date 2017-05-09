@@ -33,6 +33,19 @@ public class SegmentData {
         this.distance = startLocation.distanceTo(endLocation);
     }
 
+    public SegmentData(Location startLocation, Location endLocation, ArrayList<String> attentivePredStates, ArrayList<String> rightPredStates, ArrayList<String> leftPredStates, float speed, float score, float distance, String attentiveState) {
+        this.startLocation = startLocation;
+        this.endLocation = endLocation;
+        this.attentivePredStates = attentivePredStates;
+        this.rightPredStates = rightPredStates;
+        this.leftPredStates = leftPredStates;
+
+        this.speed = speed;
+        this.score = score;
+        this.attentiveState = attentiveState;
+        this.distance = distance;
+    }
+
     private float calculateSpeed(Location startLocation, Location endLocation) {
         double timeDiff = startLocation.getTime() - endLocation.getTime();
         double distDiff = startLocation.distanceTo(endLocation);
@@ -78,20 +91,6 @@ public class SegmentData {
         }
         return combinedString;
     }
-
-    /*private float calculateDistance() {
-        float totalDistance = 0;
-        Location previousLocation = null;
-        if (distanceLocationsList != null) {
-            for (Location location : distanceLocationsList) {
-                if (previousLocation != null) {
-                    totalDistance += previousLocation.distanceTo(location);
-                }
-                previousLocation = location;
-            }
-        }
-        return totalDistance;
-    }*/
 
     public Location getStartLocation() {
         return startLocation;

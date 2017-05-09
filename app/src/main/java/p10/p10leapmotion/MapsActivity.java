@@ -175,7 +175,88 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         builder.create().show();
                         break;
                     } else if (s == mapData.get(mapData.size() - 1)) {
-                        Toast.makeText(MapsActivity.this, "Last location have no value!", Toast.LENGTH_SHORT).show();
+
+                        int leftSteeringCounter = 0;
+                        int leftRestCounter = 0;
+                        int leftMax = 0;
+
+                        int rightSteeringCounter = 0;
+                        int rightRestCounter = 0;
+                        int rightSecondaryCounter = 0;
+                        int rightGearCounter = 0;
+                        int rightMax = 0;
+
+                        float scoreAvg = 0;
+                        float distance = 0;
+                        float speedAvg = 0;
+
+                        for (SegmentData segment : mapData) {
+                            for (String str : segment.getLeftPredStates()) {
+                                if (str.equals("1.0")) {
+                                    leftSteeringCounter++;
+                                } else if (str.equals("2.0")) {
+                                    leftRestCounter++;
+                                }
+                                leftMax++;
+                            }
+
+                            for (String str : segment.getRightPredStates()) {
+                                if (str.equals("1.0")) {
+                                    rightSteeringCounter++;
+                                } else if (str.equals("2.0")) {
+                                    rightRestCounter++;
+                                } else if (str.equals("3.0")) {
+                                    rightSteeringCounter++;
+                                } else if (str.equals("4.0")) {
+                                    rightGearCounter++;
+                                }
+                                rightMax++;
+                            }
+
+                            scoreAvg = scoreAvg + segment.getScore();
+                            distance = distance + segment.getDistance();
+                            speedAvg = speedAvg + segment.getSpeed();
+                        }
+
+                        scoreAvg = scoreAvg / mapData.size();
+                        speedAvg = scoreAvg / mapData.size();
+
+                        String startString = "";
+
+                        if (scoreAvg >= 80) {
+                            startString = "Good job!";
+                        } else if (scoreAvg >= 60) {
+                            startString = "Could be better";
+                        } else {
+                            startString = "You suck donkey dick";
+                        }
+
+                        String dataString = "Average score: \t\t\t\t" + (int) scoreAvg + "\n"
+                                + "Average speed: \t\t\t\t" + (int) speedAvg + "\n"
+                                + "Total distance: \t\t\t\t\t" + (int) distance + "\n\n"
+                                + "Left: \n"
+                                + "Steering: \t\t\t\t\t" + leftSteeringCounter + "/" + leftMax + "\n"
+                                + "Rest: \t\t\t\t\t\t\t\t" + leftRestCounter + "/" + leftMax
+                                + "\n\n" + "Right: \n"
+                                + "Steering: \t\t\t\t\t" + rightSteeringCounter + "/" + rightMax + "\n"
+                                + "Rest: \t\t\t\t\t\t\t\t" + rightRestCounter + "/" + rightMax + "\n"
+                                + "Secondary: \t\t\t" + rightSecondaryCounter + "/" + rightMax + "\n"
+                                + "Gear: \t\t\t\t\t\t\t\t" + rightGearCounter + "/" + rightMax;
+
+                        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+                        builder
+                                .setTitle(R.string.show_information_dialog_title)
+                                .setMessage("\n" + startString + "\n\n" + dataString)
+                                .setPositiveButton(R.string.dialog_ok, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        dialog.dismiss();
+                                    }
+                                });
+                        builder.create().show();
+                        break;
+
+                        //Toast.makeText(MapsActivity.this, "Last location have no value!", Toast.LENGTH_SHORT).show();
                     }
                 }
 
@@ -249,7 +330,85 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         builder.create().show();
                         break;
                     } else if (s == mapData.get(mapData.size() - 1)) {
-                        Toast.makeText(MapsActivity.this, "Last location have no value!", Toast.LENGTH_SHORT).show();
+                        int leftSteeringCounter = 0;
+                        int leftRestCounter = 0;
+                        int leftMax = 0;
+
+                        int rightSteeringCounter = 0;
+                        int rightRestCounter = 0;
+                        int rightSecondaryCounter = 0;
+                        int rightGearCounter = 0;
+                        int rightMax = 0;
+
+                        float scoreAvg = 0;
+                        float distance = 0;
+                        float speedAvg = 0;
+
+                        for (SegmentData segment : mapData) {
+                            for (String str : segment.getLeftPredStates()) {
+                                if (str.equals("1.0")) {
+                                    leftSteeringCounter++;
+                                } else if (str.equals("2.0")) {
+                                    leftRestCounter++;
+                                }
+                                leftMax++;
+                            }
+
+                            for (String str : segment.getRightPredStates()) {
+                                if (str.equals("1.0")) {
+                                    rightSteeringCounter++;
+                                } else if (str.equals("2.0")) {
+                                    rightRestCounter++;
+                                } else if (str.equals("3.0")) {
+                                    rightSteeringCounter++;
+                                } else if (str.equals("4.0")) {
+                                    rightGearCounter++;
+                                }
+                                rightMax++;
+                            }
+
+                            scoreAvg = scoreAvg + segment.getScore();
+                            distance = distance + segment.getDistance();
+                            speedAvg = speedAvg + segment.getSpeed();
+                        }
+
+                        scoreAvg = scoreAvg / mapData.size();
+                        speedAvg = speedAvg / mapData.size();
+
+                        String startString = "";
+
+                        if (scoreAvg >= 80) {
+                            startString = "Good job!";
+                        } else if (scoreAvg >= 60) {
+                            startString = "Could be better";
+                        } else {
+                            startString = "You suck donkey dick";
+                        }
+
+                        String dataString = "Average score: \t\t\t\t" + (int) scoreAvg + "\n"
+                                + "Average speed: \t\t\t\t" + (int) speedAvg + "\n"
+                                + "Total distance: \t\t\t\t\t" + (int) distance + "\n\n"
+                                + "Left: \n"
+                                + "Steering: \t\t\t\t\t" + leftSteeringCounter + "/" + leftMax + "\n"
+                                + "Rest: \t\t\t\t\t\t\t\t" + leftRestCounter + "/" + leftMax
+                                + "\n\n" + "Right: \n"
+                                + "Steering: \t\t\t\t\t" + rightSteeringCounter + "/" + rightMax + "\n"
+                                + "Rest: \t\t\t\t\t\t\t\t" + rightRestCounter + "/" + rightMax + "\n"
+                                + "Secondary: \t\t\t" + rightSecondaryCounter + "/" + rightMax + "\n"
+                                + "Gear: \t\t\t\t\t\t\t\t" + rightGearCounter + "/" + rightMax;
+
+                        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+                        builder
+                                .setTitle(R.string.show_information_dialog_title)
+                                .setMessage("\n" + startString + "\n\n" + dataString)
+                                .setPositiveButton(R.string.dialog_ok, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        dialog.dismiss();
+                                    }
+                                });
+                        builder.create().show();
+                        break;
                     }
                 }
 
@@ -312,8 +471,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         // distance and speed
                         float dist = Float.parseFloat(temp[2]);
                         float speed = 0.0f;
-                        if (!temp[3].equals("Infinity")) {
+                        if (Float.parseFloat(temp[3]) != Float.POSITIVE_INFINITY) {
                             speed = Float.parseFloat(temp[3]);
+                        } else {
+                            speed = 0.0f;
                         }
 
                         // Attentive state and score
@@ -341,7 +502,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             leftPredictions.add(s);
                         }
 
-                        SegmentData tempSegment = new SegmentData(startLocation, endLocation, attentiveList, rightPredictions, leftPredictions);
+                        SegmentData tempSegment = new SegmentData(startLocation, endLocation, attentiveList, rightPredictions, leftPredictions, speed, score, dist, attentiveState);
                         tempList.add(tempSegment);
                     }
                     br.close();
