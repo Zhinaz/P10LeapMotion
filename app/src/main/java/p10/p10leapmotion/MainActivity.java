@@ -596,7 +596,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void createNewDataFile(String fileName) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM-hh:mm:ss");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM-hh:mm");
         String currentTime = dateFormat.format(new Date());
         //String fileName = "route-" + currentTime;
 
@@ -605,9 +605,9 @@ public class MainActivity extends AppCompatActivity implements
         if (!root.exists()) {
             root.mkdirs();
         }
-        Log.e(TAG, "File path: " + path);
-        Log.e(TAG, "File root: " + root);
-        file = new File(root, fileName + ".txt");
+        //Log.e(TAG, "File path: " + path);
+        //Log.e(TAG, "File root: " + root);
+        file = new File(root, fileName + " " + currentTime + ".txt");
     }
 
     private void writeToFile(ArrayList<SegmentData> routeList) {
