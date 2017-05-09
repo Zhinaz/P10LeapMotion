@@ -23,12 +23,14 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -63,7 +65,8 @@ import java.util.Queue;
 public class MainActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        LocationListener {
+        LocationListener,
+        CreateNewFileDialog.AddNewFileListener {
 
     // UI Elements
     public TextView txt_score;
@@ -398,9 +401,8 @@ public class MainActivity extends AppCompatActivity implements
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
-                startCollecting();
-                //writeToFile(routeData);
+                CreateNewFileDialog createNewFileDialog = new CreateNewFileDialog();
+                createNewFileDialog.show(getSupportFragmentManager(), "AddNewFile");
             }
         });
 
@@ -503,7 +505,6 @@ public class MainActivity extends AppCompatActivity implements
 
     private void startCollecting() {
         dataCollecting = true;
-        createNewDataFile();
         attentivePredictedStates = new ArrayList<>();
         rightPredictedStates = new ArrayList<>();
         leftPredictedStates = new ArrayList<>();
@@ -590,10 +591,10 @@ public class MainActivity extends AppCompatActivity implements
         return tempList;
     }
 
-    private void createNewDataFile() {
+    private void createNewDataFile(String fileName) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM-hh:mm:ss");
         String currentTime = dateFormat.format(new Date());
-        String fileName = "route-" + currentTime;
+        //String fileName = "route-" + currentTime;
 
         File path = Environment.getExternalStorageDirectory();
         File root = new File(path, getApplicationContext().getPackageName());
@@ -781,6 +782,13 @@ public class MainActivity extends AppCompatActivity implements
                 textToSpeech.speak(textMessage, TextToSpeech.QUEUE_FLUSH, null);
             }
         }
+    }
+
+    @Override
+    public void onAcceptNewFile(String _title) {
+        createNewDataFile(_title);
+        startCollecting();
+        gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
     }
 
     // ASyncTask for update UI  // new ImageViewTask().execute(warning, null, null);
