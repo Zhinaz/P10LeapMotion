@@ -253,6 +253,8 @@ public class MainActivity extends AppCompatActivity implements
                 attentivePredictedStates = new ArrayList<>();
                 rightPredictedStates = new ArrayList<>();
                 leftPredictedStates = new ArrayList<>();
+
+                mLastLocation = location;
             }
 
             if (location.getSpeed() <= MINIMUM_SPEED && routeData.size() >= 12) {
@@ -272,7 +274,6 @@ public class MainActivity extends AppCompatActivity implements
                 routeData.clear();
             }
         }
-        mLastLocation = location;
     }
 
     @Override
