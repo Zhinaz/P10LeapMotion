@@ -263,7 +263,7 @@ public class MainActivity extends AppCompatActivity implements
 
                 calculatedScore = calculatedScore / (double) routeData.size();
                 txt_score.setText(String.valueOf(new DecimalFormat("##.#").format(calculatedScore)));
-                
+
                 sendWarning(calculateAttentiveState((float) calculatedScore));
                 new ShowScoreTask().execute();
 

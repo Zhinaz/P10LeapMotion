@@ -70,7 +70,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             LatLng tempStart = new LatLng(s.getStartLocation().getLatitude(), s.getStartLocation().getLongitude());
             LatLng tempEnd = new LatLng(s.getEndLocation().getLatitude(), s.getEndLocation().getLongitude());
-            mMap.addMarker(new MarkerOptions().position(tempStart).visible(false));
+            mMap.addMarker(new MarkerOptions().position(tempStart));
 
             if (i == n - 1) {
                 mMap.addMarker(new MarkerOptions().position(tempEnd));
