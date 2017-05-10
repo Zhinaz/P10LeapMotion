@@ -107,6 +107,7 @@ public class MainActivity extends AppCompatActivity implements
     public static final Integer INSTANCES_BEFORE_WARNING = 4;
     public static final double MINIMUM_METER_DRIVEN = 60;
     public static final Integer MINIMUM_SPEED = 5;
+    public static final Integer SCORE_SHOW_TIMER = 1000 * 8; // Given in seconds
 
     private ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
     private Queue<String> stateQueue = new CircularFifoQueue<>(INSTANCES_BEFORE_WARNING);
@@ -255,23 +256,21 @@ public class MainActivity extends AppCompatActivity implements
             }
 
             if (location.getSpeed() <= MINIMUM_SPEED && routeData.size() >= 12) {
-
                 double calculatedScore = 0;
                 for (SegmentData segment : routeData) {
                     calculatedScore += segment.getScore();
                 }
-                calculatedScore = calculatedScore / (double) routeData.size();
-                txt_score.setText(String.valueOf(new DecimalFormat("##.##").format(calculatedScore)));
 
+                calculatedScore = calculatedScore / (double) routeData.size();
+                txt_score.setText(String.valueOf(new DecimalFormat("##.#").format(calculatedScore)));
+                
                 sendWarning(calculateAttentiveState((float) calculatedScore));
+                new ShowScoreTask().execute();
 
                 ArrayList<SegmentData> tempRouteData = routeData;
                 writeToFile(tempRouteData);
-
                 routeData.clear();
             }
-
-
         }
         mLastLocation = location;
     }
@@ -334,6 +333,13 @@ public class MainActivity extends AppCompatActivity implements
         mGoogleApiClient.connect();
     }
 
+    @Override
+    public void onAcceptNewFile(String _title) {
+        createNewDataFile(_title);
+        startCollecting();
+        gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
+    }
+
     private void initialiseComponents() {
         // UI Elements
         gifImageView = (GifImageView) findViewById(R.id.GifImageView);
@@ -358,6 +364,8 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
 
+        txt_score.setVisibility(View.INVISIBLE);
+        txt_message.setVisibility(View.INVISIBLE);
         setupTextToSpeech();
     }
 
@@ -452,6 +460,28 @@ public class MainActivity extends AppCompatActivity implements
                 }
             }
         });
+    }
+
+    private class ShowScoreTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected void onPreExecute() {
+            txt_score.setVisibility(View.VISIBLE);
+            txt_message.setVisibility(View.VISIBLE);
+        }
+        @Override
+        protected Void doInBackground(Void... i) {
+            try {
+                Thread.sleep(SCORE_SHOW_TIMER);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+        @Override
+        protected void onPostExecute(Void i) {
+            txt_score.setVisibility(View.INVISIBLE);
+            txt_message.setVisibility(View.INVISIBLE);
+        }
     }
 
     private void startCollecting() {
@@ -732,13 +762,6 @@ public class MainActivity extends AppCompatActivity implements
                 textToSpeech.speak(textMessage, TextToSpeech.QUEUE_FLUSH, null);
             }
         }
-    }
-
-    @Override
-    public void onAcceptNewFile(String _title) {
-        createNewDataFile(_title);
-        startCollecting();
-        gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
     }
 
     // ASyncTask for update UI  // new ImageViewTask().execute(warning, null, null);
