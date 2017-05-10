@@ -10,7 +10,9 @@ import android.os.Environment;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
+import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -39,6 +41,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     private ArrayList<SegmentData> mapData = new ArrayList<>();
+    private ArrayList<Marker> markerList = new ArrayList<>();
+    private Button btn_markers;
+    private Button btn_dataset;
+    private Boolean markersVisible = true;
 
     File root;
 
@@ -53,6 +59,32 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         Intent intent = getIntent();
         root = (File) intent.getExtras().get("root");
+
+        btn_markers = (Button) findViewById(R.id.btn_markers);
+        btn_markers.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (!markersVisible) {
+                    for (Marker mark : markerList) {
+                        mark.setVisible(true);
+                        markersVisible = true;
+                    }
+                } else {
+                    for (Marker mark : markerList) {
+                        mark.setVisible(false);
+                        markersVisible = false;
+                    }
+                }
+            }
+        });
+
+        btn_dataset = (Button) findViewById(R.id.btn_dataset);
+        btn_dataset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                chooseDatasetDialog();
+            }
+        });
 
         chooseDatasetDialog();
     }
@@ -70,7 +102,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             LatLng tempStart = new LatLng(s.getStartLocation().getLatitude(), s.getStartLocation().getLongitude());
             LatLng tempEnd = new LatLng(s.getEndLocation().getLatitude(), s.getEndLocation().getLongitude());
-            mMap.addMarker(new MarkerOptions().position(tempStart));
+
+            Marker tempMark = mMap.addMarker(new MarkerOptions().position(tempStart));
+            markerList.add(tempMark);
 
             if (i == n - 1) {
                 mMap.addMarker(new MarkerOptions().position(tempEnd));
@@ -225,6 +259,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         builder.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_single_choice, tempList), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
+                markerList = new ArrayList<>();
+                markersVisible = true;
+                mMap.clear();
+
                 mapData = readSelectedFile(tempList.get(i));
                 onDataSetChanged();
                 dialogInterface.dismiss();
