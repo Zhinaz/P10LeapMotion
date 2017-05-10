@@ -256,7 +256,6 @@ public class MainActivity extends AppCompatActivity implements
             }
 
             if (location.getSpeed() <= MINIMUM_SPEED && routeData.size() >= 12) {
-
                 double calculatedScore = 0;
                 for (SegmentData segment : routeData) {
                     calculatedScore += segment.getScore();
@@ -269,7 +268,6 @@ public class MainActivity extends AppCompatActivity implements
 
                 ArrayList<SegmentData> tempRouteData = routeData;
                 writeToFile(tempRouteData);
-
                 routeData.clear();
             }
         }
@@ -332,6 +330,13 @@ public class MainActivity extends AppCompatActivity implements
         Log.i(TAG, "Connection suspended");
         // Reestablish connection
         mGoogleApiClient.connect();
+    }
+
+    @Override
+    public void onAcceptNewFile(String _title) {
+        createNewDataFile(_title);
+        startCollecting();
+        gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
     }
 
     private void initialiseComponents() {
@@ -756,13 +761,6 @@ public class MainActivity extends AppCompatActivity implements
                 textToSpeech.speak(textMessage, TextToSpeech.QUEUE_FLUSH, null);
             }
         }
-    }
-
-    @Override
-    public void onAcceptNewFile(String _title) {
-        createNewDataFile(_title);
-        startCollecting();
-        gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
     }
 
     // ASyncTask for update UI  // new ImageViewTask().execute(warning, null, null);
