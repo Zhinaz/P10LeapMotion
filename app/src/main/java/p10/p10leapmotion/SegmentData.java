@@ -151,6 +151,7 @@ public class SegmentData {
     public String additionalDataString() {
         int leftSteeringCounter = 0;
         int leftRestCounter = 0;
+        int leftCannotSee = 0;
         int leftMax = leftPredStates.size();
 
         for (String s : leftPredStates) {
@@ -158,6 +159,8 @@ public class SegmentData {
                 leftSteeringCounter++;
             } else if (s.equals("2.0")) {
                 leftRestCounter++;
+            } else if (s.equals("-1.0")) {
+                leftCannotSee++;
             }
         }
 
@@ -165,6 +168,7 @@ public class SegmentData {
         int rightRestCounter = 0;
         int rightSecondaryCounter = 0;
         int rightGearCounter = 0;
+        int rightCannotSee = 0;
         int rightMax = rightPredStates.size();
 
         for (String s : rightPredStates) {
@@ -176,16 +180,22 @@ public class SegmentData {
                 rightSteeringCounter++;
             } else if (s.equals("4.0")) {
                 rightGearCounter++;
+            } else if (s.equals("-1.0")) {
+                rightCannotSee++;
             }
         }
 
         return "Left: \n"
                 + "Steering: \t\t\t\t\t" + leftSteeringCounter + "/" + leftMax + "\n"
-                + "Rest: \t\t\t\t\t\t\t\t" + leftRestCounter + "/" + leftMax
+                + "Rest: \t\t\t\t\t\t\t\t" + leftRestCounter + "/" + leftMax + "\n"
+                + "Cannot see hand: \t\t\t" + leftCannotSee + "/" + leftMax + "\n"
+                + "Not accurate enough: \t" + (leftMax - (leftSteeringCounter + leftRestCounter + leftCannotSee)) + "/" + leftMax + "\n"
                 + "\n\n" + "Right: \n"
                 + "Steering: \t\t\t\t\t" + rightSteeringCounter + "/" + rightMax + "\n"
                 + "Rest: \t\t\t\t\t\t\t\t" + rightRestCounter + "/" + rightMax + "\n"
                 + "Secondary: \t\t\t" + rightSecondaryCounter + "/" + rightMax + "\n"
-                + "Gear: \t\t\t\t\t\t\t\t" + rightGearCounter + "/" + rightMax;
+                + "Gear: \t\t\t\t\t\t\t\t" + rightGearCounter + "/" + rightMax + "\n"
+                + "Cannot see hand: \t\t\t" + rightCannotSee + "/" + rightMax + "\n"
+                + "Not accurate enough: \t" + (rightMax - (rightSteeringCounter + rightRestCounter + rightSecondaryCounter + rightGearCounter + rightCannotSee)) + "/" + rightMax + "\n";
     }
 }

@@ -260,7 +260,7 @@ public class MainActivity extends AppCompatActivity implements
                 for (SegmentData segment : routeData) {
                     calculatedScore += segment.getScore();
                 }
-                calculatedScore = calculatedScore / routeData.size();
+                calculatedScore = calculatedScore / (double) routeData.size();
                 txt_score.setText(String.valueOf(new DecimalFormat("##.##").format(calculatedScore)));
 
                 sendWarning(calculateAttentiveState((float) calculatedScore));
@@ -772,12 +772,12 @@ public class MainActivity extends AppCompatActivity implements
             attentivePredictedStates.add(temp[0]);
 
             if (temp.length == 3) {
-                if (!temp[1].equals("-1.0")) {
-                    rightPredictedStates.add(temp[1]);
-                }
-                if (!temp[2].equals("-1.0")) {
-                    leftPredictedStates.add(temp[2]);
-                }
+                //if (!temp[1].equals("-1.0")) {
+                rightPredictedStates.add(temp[1]);
+                //}
+                //if (!temp[2].equals("-1.0")) {
+                leftPredictedStates.add(temp[2]);
+                //}
             }
         }
     }

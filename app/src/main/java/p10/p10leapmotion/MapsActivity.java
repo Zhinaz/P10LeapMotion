@@ -70,15 +70,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             LatLng tempStart = new LatLng(s.getStartLocation().getLatitude(), s.getStartLocation().getLongitude());
             LatLng tempEnd = new LatLng(s.getEndLocation().getLatitude(), s.getEndLocation().getLongitude());
-            mMap.addMarker(new MarkerOptions().position(tempStart));
+            mMap.addMarker(new MarkerOptions().position(tempStart).visible(false));
 
             if (i == n - 1) {
                 mMap.addMarker(new MarkerOptions().position(tempEnd));
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(tempEnd));
-                CameraUpdate center=
-                        CameraUpdateFactory.newLatLng(new LatLng(tempEnd.latitude,
-                                tempEnd.longitude));
-                CameraUpdate zoom=CameraUpdateFactory.zoomTo(15);
+
+                CameraUpdate center = CameraUpdateFactory.newLatLng(new LatLng(tempEnd.latitude, tempEnd.longitude));
+                CameraUpdate zoom = CameraUpdateFactory.zoomTo(15);
 
                 mMap.moveCamera(center);
                 mMap.animateCamera(zoom);
@@ -87,17 +85,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if (s.getAttentiveState().equals(GOOD)) {
                 Polyline line = mMap.addPolyline(new PolylineOptions()
                         .add(tempStart, tempEnd)
-                        .width(5)
+                        .width(7)
                         .color(Color.GREEN));
             } else if (s.getAttentiveState().equals(NEUTRAL)) {
                 Polyline line = mMap.addPolyline(new PolylineOptions()
                         .add(tempStart, tempEnd)
-                        .width(5)
+                        .width(7)
                         .color(Color.YELLOW));
             } else {
                 Polyline line = mMap.addPolyline(new PolylineOptions()
                         .add(tempStart, tempEnd)
-                        .width(5)
+                        .width(7)
                         .color(Color.RED));
             }
 
@@ -127,12 +125,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     } else if (s == mapData.get(mapData.size() - 1)) {
                         int leftSteeringCounter = 0;
                         int leftRestCounter = 0;
+                        int leftCannotSee = 0;
                         int leftMax = 0;
 
                         int rightSteeringCounter = 0;
                         int rightRestCounter = 0;
                         int rightSecondaryCounter = 0;
                         int rightGearCounter = 0;
+                        int rightCannotSee = 0;
                         int rightMax = 0;
 
                         float scoreAvg = 0;
@@ -145,6 +145,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     leftSteeringCounter++;
                                 } else if (str.equals("2.0")) {
                                     leftRestCounter++;
+                                } else if (str.equals("-1.0")) {
+                                    leftCannotSee++;
                                 }
                                 leftMax++;
                             }
@@ -158,6 +160,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     rightSteeringCounter++;
                                 } else if (str.equals("4.0")) {
                                     rightGearCounter++;
+                                } else if (str.equals("-1.0")) {
+                                    rightCannotSee++;
                                 }
                                 rightMax++;
                             }
@@ -175,9 +179,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         if (scoreAvg >= 80) {
                             startString = "Good job!";
                         } else if (scoreAvg >= 60) {
-                            startString = "Could be better";
+                            startString = "Could be better!";
                         } else {
-                            startString = "You suck donkey dick";
+                            startString = "You need to improve those hand positions!";
                         }
 
                         String dataString = "Average score: \t\t\t\t" + (int) scoreAvg + "\n"
@@ -185,12 +189,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 + "Total distance: \t\t\t\t\t" + (int) distance + "\n\n"
                                 + "Left: \n"
                                 + "Steering: \t\t\t\t\t" + leftSteeringCounter + "/" + leftMax + "\n"
-                                + "Rest: \t\t\t\t\t\t\t\t" + leftRestCounter + "/" + leftMax
+                                + "Rest: \t\t\t\t\t\t\t\t" + leftRestCounter + "/" + leftMax + "\n"
+                                + "Cannot see hand: \t\t\t" + leftCannotSee + "/" + leftMax + "\n"
+                                + "Not accurate enough: \t" + (leftMax - (leftSteeringCounter + leftRestCounter + leftCannotSee)) + "/" + leftMax + "\n"
                                 + "\n\n" + "Right: \n"
                                 + "Steering: \t\t\t\t\t" + rightSteeringCounter + "/" + rightMax + "\n"
                                 + "Rest: \t\t\t\t\t\t\t\t" + rightRestCounter + "/" + rightMax + "\n"
                                 + "Secondary: \t\t\t" + rightSecondaryCounter + "/" + rightMax + "\n"
-                                + "Gear: \t\t\t\t\t\t\t\t" + rightGearCounter + "/" + rightMax;
+                                + "Gear: \t\t\t\t\t\t\t\t" + rightGearCounter + "/" + rightMax + "\n"
+                                + "Cannot see hand: \t\t\t" + rightCannotSee + "/" + rightMax + "\n"
+                                + "Not accurate enough: \t" + (rightMax - (rightSteeringCounter + rightRestCounter + rightSecondaryCounter + rightGearCounter + rightCannotSee)) + "/" + rightMax + "\n";
 
                         AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
                         builder
