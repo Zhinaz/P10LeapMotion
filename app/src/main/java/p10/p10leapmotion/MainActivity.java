@@ -56,6 +56,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -104,7 +105,7 @@ public class MainActivity extends AppCompatActivity implements
     private String mConnectedDeviceName = null;
 
     public static final Integer INSTANCES_BEFORE_WARNING = 4;
-    public static final double MINIMUM_METER_DRIVEN = 10;
+    public static final double MINIMUM_METER_DRIVEN = 60;
     public static final Integer MINIMUM_SPEED = 5;
 
     private ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
@@ -150,66 +151,6 @@ public class MainActivity extends AppCompatActivity implements
 
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(bluetoothReceiver, filter);
-
-        Location loc = new Location("Dummy variable");
-        loc.setLatitude(57);
-        loc.setLongitude(9.9);
-        Location loc2 = new Location("Dummy variable 2");
-        loc2.setLatitude(58);
-        loc2.setLongitude(10.9);
-        ArrayList<String> attentivePredictedStates = new ArrayList<>();
-        attentivePredictedStates.add(ATTENTIVE);
-        attentivePredictedStates.add(ATTENTIVE);
-        attentivePredictedStates.add(ATTENTIVE);
-        attentivePredictedStates.add(ATTENTIVE);
-        attentivePredictedStates.add(ATTENTIVE);
-        ArrayList<String> rightPredictedStates = new ArrayList<>();
-        rightPredictedStates.add("1.0");
-        rightPredictedStates.add("1.0");
-        rightPredictedStates.add("2.0");
-        rightPredictedStates.add("2.0");
-        rightPredictedStates.add("3.0");
-        ArrayList<String> leftPredictedStates = new ArrayList<>();
-        leftPredictedStates.add("1.0");
-        leftPredictedStates.add("1.0");
-        leftPredictedStates.add("1.0");
-        leftPredictedStates.add("1.0");
-        leftPredictedStates.add("2.0");
-        SegmentData tempData = new SegmentData(loc, loc2, attentivePredictedStates, rightPredictedStates, leftPredictedStates);
-
-        Location loc3 = new Location("Dummy variable 3");
-        loc3.setLatitude(59);
-        loc3.setLongitude(11.9);
-        ArrayList<String> attentivePredictedStates2 = new ArrayList<>();
-        attentivePredictedStates2.add(ATTENTIVE);
-        attentivePredictedStates2.add(ATTENTIVE);
-        attentivePredictedStates2.add(ATTENTIVE);
-        attentivePredictedStates2.add(INATTENTIVE);
-        attentivePredictedStates2.add(INATTENTIVE);
-        ArrayList<String> rightPredictedStates2 = new ArrayList<>();
-        rightPredictedStates2.add("1.0");
-        rightPredictedStates2.add("4.0");
-        rightPredictedStates2.add("3.0");
-        rightPredictedStates2.add("3.0");
-        rightPredictedStates2.add("3.0");
-        ArrayList<String> leftPredictedStates2 = new ArrayList<>();
-        leftPredictedStates2.add("1.0");
-        leftPredictedStates2.add("2.0");
-        leftPredictedStates2.add("2.0");
-        leftPredictedStates2.add("2.0");
-        leftPredictedStates2.add("2.0");
-        SegmentData tempData2 = new SegmentData(loc2, loc3, attentivePredictedStates2, rightPredictedStates2, leftPredictedStates2);
-
-        ArrayList<SegmentData> testSager = new ArrayList<>();
-        testSager.add(tempData);
-        testSager.add(tempData2);
-
-        //ArrayList<SegmentData> trololo = readDirectory();
-        //writeToFile(testSager);
-        System.out.print("");
-
-        //createNewDataFile();
-        //proevAtSkrivNoget();
     }
 
     @Override
@@ -308,23 +249,29 @@ public class MainActivity extends AppCompatActivity implements
                 SegmentData tempData = new SegmentData(mLastLocation, location, attentivePredictedStates, rightPredictedStates, leftPredictedStates);
                 routeData.add(tempData);
 
-                attentivePredictedStates.clear();
-                rightPredictedStates.clear();
-                leftPredictedStates.clear();
+                attentivePredictedStates = new ArrayList<>();
+                rightPredictedStates = new ArrayList<>();
+                leftPredictedStates = new ArrayList<>();
             }
 
             if (location.getSpeed() <= MINIMUM_SPEED && routeData.size() >= 12) {
+
                 double calculatedScore = 0;
                 for (SegmentData segment : routeData) {
-                    calculatedScore = +segment.getScore();
+                    calculatedScore += segment.getScore();
                 }
                 calculatedScore = calculatedScore / routeData.size();
-                txt_score.setText(String.valueOf(calculatedScore));
+                txt_score.setText(String.valueOf(new DecimalFormat("##.##").format(calculatedScore)));
 
                 sendWarning(calculateAttentiveState((float) calculatedScore));
-                writeToFile(routeData);
+
+                ArrayList<SegmentData> tempRouteData = routeData;
+                writeToFile(tempRouteData);
+
                 routeData.clear();
             }
+
+
         }
         mLastLocation = location;
     }
@@ -612,7 +559,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private void writeToFile(ArrayList<SegmentData> routeList) {
         try {
-            FileWriter fw = new FileWriter(file);
+            FileWriter fw = new FileWriter(file, true);
             BufferedWriter bw = new BufferedWriter(fw);
 
             for (SegmentData segment : routeList) {
@@ -817,6 +764,8 @@ public class MainActivity extends AppCompatActivity implements
     private void handleBluetoothMessage(String message) {
         // Example message is: "INATTENTIVE 3.0 1.0" First value is predictedRight, second is predictedLeft
         String[] temp = message.split(" ");
+
+        txt_message.setText(message);
 
         // addToStateList(temp[0]); // Starts immediate feedback
         if (dataCollecting) {

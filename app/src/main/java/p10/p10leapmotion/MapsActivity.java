@@ -13,6 +13,7 @@ import android.support.v7.app.AlertDialog;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -20,6 +21,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.io.BufferedReader;
@@ -58,230 +60,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-/*
-        Location loc = new Location("Dummy variable");
-        loc.setLatitude(57);
-        loc.setLongitude(9.9);
-        Location loc2 = new Location("Dummy variable 2");
-        loc2.setLatitude(58);
-        loc2.setLongitude(10.9);
-        ArrayList<String> attentivePredictedStates = new ArrayList<>();
-        attentivePredictedStates.add(ATTENTIVE);
-        attentivePredictedStates.add(ATTENTIVE);
-        attentivePredictedStates.add(ATTENTIVE);
-        attentivePredictedStates.add(ATTENTIVE);
-        attentivePredictedStates.add(ATTENTIVE);
-        ArrayList<String> rightPredictedStates = new ArrayList<>();
-        rightPredictedStates.add("1.0");
-        rightPredictedStates.add("1.0");
-        rightPredictedStates.add("2.0");
-        rightPredictedStates.add("2.0");
-        rightPredictedStates.add("3.0");
-        ArrayList<String> leftPredictedStates = new ArrayList<>();
-        leftPredictedStates.add("1.0");
-        leftPredictedStates.add("1.0");
-        leftPredictedStates.add("1.0");
-        leftPredictedStates.add("1.0");
-        leftPredictedStates.add("2.0");
-        SegmentData tempData = new SegmentData(loc, loc2, attentivePredictedStates, rightPredictedStates, leftPredictedStates);
-
-        Location loc3 = new Location("Dummy variable 3");
-        loc3.setLatitude(59);
-        loc3.setLongitude(11.9);
-        ArrayList<String> attentivePredictedStates2 = new ArrayList<>();
-        attentivePredictedStates2.add(ATTENTIVE);
-        attentivePredictedStates2.add(ATTENTIVE);
-        attentivePredictedStates2.add(ATTENTIVE);
-        attentivePredictedStates2.add(INATTENTIVE);
-        attentivePredictedStates2.add(INATTENTIVE);
-        ArrayList<String> rightPredictedStates2 = new ArrayList<>();
-        rightPredictedStates2.add("1.0");
-        rightPredictedStates2.add("4.0");
-        rightPredictedStates2.add("3.0");
-        rightPredictedStates2.add("3.0");
-        rightPredictedStates2.add("3.0");
-        ArrayList<String> leftPredictedStates2 = new ArrayList<>();
-        leftPredictedStates2.add("1.0");
-        leftPredictedStates2.add("2.0");
-        leftPredictedStates2.add("2.0");
-        leftPredictedStates2.add("2.0");
-        leftPredictedStates2.add("2.0");
-        SegmentData tempData2 = new SegmentData(loc2, loc3, attentivePredictedStates2, rightPredictedStates2, leftPredictedStates2);
-
-        mapData.add(tempData);
-        mapData.add(tempData2);
-*/
-        int i = 0;
-        int n = mapData.size();
-
-        PolylineOptions optionsGreen = new PolylineOptions();
-        optionsGreen.width(5);
-        optionsGreen.visible(true);
-        optionsGreen.color(Color.GREEN);
-        PolylineOptions optionsYellow = new PolylineOptions();
-        optionsYellow.width(5);
-        optionsYellow.visible(true);
-        optionsYellow.color(Color.YELLOW);
-        PolylineOptions optionsRed = new PolylineOptions();
-        optionsRed.width(5);
-        optionsRed.visible(true);
-        optionsRed.color(Color.RED);
-
-        for (SegmentData s : mapData) {
-
-            LatLng tempStart = new LatLng(s.getStartLocation().getLatitude(), s.getStartLocation().getLongitude());
-            LatLng tempEnd = new LatLng(s.getEndLocation().getLatitude(), s.getEndLocation().getLongitude());
-            mMap.addMarker(new MarkerOptions().position(tempStart));
-
-            if (i == n - 1) {
-                mMap.addMarker(new MarkerOptions().position(tempEnd));
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(tempEnd));
-            }
-
-            if (s.getAttentiveState().equals(GOOD)) {
-                optionsGreen.add(tempStart);
-                optionsGreen.add(tempEnd);
-            } else if (s.getAttentiveState().equals(NEUTRAL)) {
-                optionsYellow.add(tempStart);
-                optionsYellow.add(tempEnd);
-            } else {
-                optionsRed.add(tempStart);
-                optionsRed.add(tempEnd);
-            }
-
-            i++;
-        }
-
-        mMap.addPolyline(optionsGreen);
-        mMap.addPolyline(optionsYellow);
-        mMap.addPolyline(optionsRed);
-        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-            @Override
-            public boolean onMarkerClick(Marker marker) {
-
-                LatLng markerLocation = marker.getPosition();
-                for (SegmentData s : mapData) {
-                    if (markerLocation.latitude == s.getStartLocation().getLatitude() && markerLocation.longitude == s.getStartLocation().getLongitude()) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
-                        builder
-                                .setTitle(R.string.show_information_dialog_title)
-                                .setMessage("\n" + s.scoreString() + "\n\n" + s.additionalDataString())
-                                .setPositiveButton(R.string.dialog_ok, new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        dialog.dismiss();
-                                    }
-                                });
-                        builder.create().show();
-                        break;
-                    } else if (s == mapData.get(mapData.size() - 1)) {
-
-                        int leftSteeringCounter = 0;
-                        int leftRestCounter = 0;
-                        int leftMax = 0;
-
-                        int rightSteeringCounter = 0;
-                        int rightRestCounter = 0;
-                        int rightSecondaryCounter = 0;
-                        int rightGearCounter = 0;
-                        int rightMax = 0;
-
-                        float scoreAvg = 0;
-                        float distance = 0;
-                        float speedAvg = 0;
-
-                        for (SegmentData segment : mapData) {
-                            for (String str : segment.getLeftPredStates()) {
-                                if (str.equals("1.0")) {
-                                    leftSteeringCounter++;
-                                } else if (str.equals("2.0")) {
-                                    leftRestCounter++;
-                                }
-                                leftMax++;
-                            }
-
-                            for (String str : segment.getRightPredStates()) {
-                                if (str.equals("1.0")) {
-                                    rightSteeringCounter++;
-                                } else if (str.equals("2.0")) {
-                                    rightRestCounter++;
-                                } else if (str.equals("3.0")) {
-                                    rightSteeringCounter++;
-                                } else if (str.equals("4.0")) {
-                                    rightGearCounter++;
-                                }
-                                rightMax++;
-                            }
-
-                            scoreAvg = scoreAvg + segment.getScore();
-                            distance = distance + segment.getDistance();
-                            speedAvg = speedAvg + segment.getSpeed();
-                        }
-
-                        scoreAvg = scoreAvg / mapData.size();
-                        speedAvg = scoreAvg / mapData.size();
-
-                        String startString = "";
-
-                        if (scoreAvg >= 80) {
-                            startString = "Good job!";
-                        } else if (scoreAvg >= 60) {
-                            startString = "Could be better";
-                        } else {
-                            startString = "You suck donkey dick";
-                        }
-
-                        String dataString = "Average score: \t\t\t\t" + (int) scoreAvg + "\n"
-                                + "Average speed: \t\t\t\t" + (int) speedAvg + "\n"
-                                + "Total distance: \t\t\t\t\t" + (int) distance + "\n\n"
-                                + "Left: \n"
-                                + "Steering: \t\t\t\t\t" + leftSteeringCounter + "/" + leftMax + "\n"
-                                + "Rest: \t\t\t\t\t\t\t\t" + leftRestCounter + "/" + leftMax
-                                + "\n\n" + "Right: \n"
-                                + "Steering: \t\t\t\t\t" + rightSteeringCounter + "/" + rightMax + "\n"
-                                + "Rest: \t\t\t\t\t\t\t\t" + rightRestCounter + "/" + rightMax + "\n"
-                                + "Secondary: \t\t\t" + rightSecondaryCounter + "/" + rightMax + "\n"
-                                + "Gear: \t\t\t\t\t\t\t\t" + rightGearCounter + "/" + rightMax;
-
-                        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
-                        builder
-                                .setTitle(R.string.show_information_dialog_title)
-                                .setMessage("\n" + startString + "\n\n" + dataString)
-                                .setPositiveButton(R.string.dialog_ok, new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        dialog.dismiss();
-                                    }
-                                });
-                        builder.create().show();
-                        break;
-
-                        //Toast.makeText(MapsActivity.this, "Last location have no value!", Toast.LENGTH_SHORT).show();
-                    }
-                }
-
-                return true;
-            }
-        });
     }
 
     public void onDataSetChanged() {
         int i = 0;
         int n = mapData.size();
 
-        PolylineOptions optionsGreen = new PolylineOptions();
-        optionsGreen.width(5);
-        optionsGreen.visible(true);
-        optionsGreen.color(Color.GREEN);
-        PolylineOptions optionsYellow = new PolylineOptions();
-        optionsYellow.width(5);
-        optionsYellow.visible(true);
-        optionsYellow.color(Color.YELLOW);
-        PolylineOptions optionsRed = new PolylineOptions();
-        optionsRed.width(5);
-        optionsRed.visible(true);
-        optionsRed.color(Color.RED);
-
         for (SegmentData s : mapData) {
 
             LatLng tempStart = new LatLng(s.getStartLocation().getLatitude(), s.getStartLocation().getLongitude());
@@ -291,25 +75,36 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if (i == n - 1) {
                 mMap.addMarker(new MarkerOptions().position(tempEnd));
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(tempEnd));
+                CameraUpdate center=
+                        CameraUpdateFactory.newLatLng(new LatLng(tempEnd.latitude,
+                                tempEnd.longitude));
+                CameraUpdate zoom=CameraUpdateFactory.zoomTo(15);
+
+                mMap.moveCamera(center);
+                mMap.animateCamera(zoom);
             }
 
             if (s.getAttentiveState().equals(GOOD)) {
-                optionsGreen.add(tempStart);
-                optionsGreen.add(tempEnd);
+                Polyline line = mMap.addPolyline(new PolylineOptions()
+                        .add(tempStart, tempEnd)
+                        .width(5)
+                        .color(Color.GREEN));
             } else if (s.getAttentiveState().equals(NEUTRAL)) {
-                optionsYellow.add(tempStart);
-                optionsYellow.add(tempEnd);
+                Polyline line = mMap.addPolyline(new PolylineOptions()
+                        .add(tempStart, tempEnd)
+                        .width(5)
+                        .color(Color.YELLOW));
             } else {
-                optionsRed.add(tempStart);
-                optionsRed.add(tempEnd);
+                Polyline line = mMap.addPolyline(new PolylineOptions()
+                        .add(tempStart, tempEnd)
+                        .width(5)
+                        .color(Color.RED));
             }
 
             i++;
         }
 
-        mMap.addPolyline(optionsGreen);
-        mMap.addPolyline(optionsYellow);
-        mMap.addPolyline(optionsRed);
+
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
@@ -514,5 +309,4 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         return tempList;
     }
-
 }

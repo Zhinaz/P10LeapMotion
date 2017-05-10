@@ -47,10 +47,10 @@ public class SegmentData {
     }
 
     private float calculateSpeed(Location startLocation, Location endLocation) {
-        double timeDiff = startLocation.getTime() - endLocation.getTime();
+        double timeDiff = endLocation.getTime() - startLocation.getTime();
         double distDiff = startLocation.distanceTo(endLocation);
 
-        return (float) (distDiff / timeDiff * 3600);
+        return (float) ((distDiff / timeDiff) * 3600);
     }
 
     private float calculateScore(ArrayList<String> attentivePredStates) {
