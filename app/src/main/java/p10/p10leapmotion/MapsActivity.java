@@ -31,6 +31,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import static p10.p10leapmotion.MainActivity.ATTENTIVE;
@@ -221,19 +222,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                         String dataString = "Average score: \t\t\t\t" + (int) scoreAvg + "\n"
                                 + "Average speed: \t\t\t\t" + (int) speedAvg + "\n"
-                                + "Total distance: \t\t\t\t\t" + (int) distance + "\n\n"
+                                + "Total distance: \t\t\t\t" + (int) distance + "\n\n"
                                 + "Left: \n"
-                                + "Steering: \t\t\t\t\t" + leftSteeringCounter + "/" + leftMax + "\n"
-                                + "Rest: \t\t\t\t\t\t\t\t" + leftRestCounter + "/" + leftMax + "\n"
-                                + "Cannot see hand: \t\t\t" + leftCannotSee + "/" + leftMax + "\n"
-                                + "Not accurate enough: \t" + (leftMax - (leftSteeringCounter + leftRestCounter + leftCannotSee)) + "/" + leftMax + "\n"
+                                + "Steering: \t\t\t\t\t" + leftSteeringCounter + "/" + leftMax + "\t\t\t\t" + calculatePercentage(leftSteeringCounter, leftMax) + "\n"
+                                + "Rest: \t\t\t\t\t\t\t\t" + leftRestCounter + "/" + leftMax + "\t\t\t\t\t\t" + calculatePercentage(leftRestCounter, leftMax) + "\n"
+                                + "Cannot see: \t\t" + leftCannotSee + "/" + leftMax + "\t\t\t\t\t\t" + calculatePercentage(leftCannotSee, leftMax) + "\n"
+                                + "Not accurate: \t" + (leftMax - (leftSteeringCounter + leftRestCounter + leftCannotSee)) + "/" + leftMax + "\t\t\t\t\t\t" + calculatePercentage((leftMax - (leftSteeringCounter + leftRestCounter + leftCannotSee)), leftMax) + "\n"
                                 + "\n\n" + "Right: \n"
-                                + "Steering: \t\t\t\t\t" + rightSteeringCounter + "/" + rightMax + "\n"
-                                + "Rest: \t\t\t\t\t\t\t\t" + rightRestCounter + "/" + rightMax + "\n"
-                                + "Secondary: \t\t\t" + rightSecondaryCounter + "/" + rightMax + "\n"
-                                + "Gear: \t\t\t\t\t\t\t\t" + rightGearCounter + "/" + rightMax + "\n"
-                                + "Cannot see hand: \t\t\t" + rightCannotSee + "/" + rightMax + "\n"
-                                + "Not accurate enough: \t" + (rightMax - (rightSteeringCounter + rightRestCounter + rightSecondaryCounter + rightGearCounter + rightCannotSee)) + "/" + rightMax + "\n";
+                                + "Steering: \t\t\t\t\t" + rightSteeringCounter + "/" + rightMax + "\t\t\t\t" + calculatePercentage(rightSteeringCounter, rightMax) + "\n"
+                                + "Rest: \t\t\t\t\t\t\t\t" + rightRestCounter + "/" + rightMax + "\t\t\t\t" + calculatePercentage(rightRestCounter, rightMax) + "\n"
+                                + "Secondary: \t\t\t" + rightSecondaryCounter + "/" + rightMax + "\t\t\t\t\t\t" + calculatePercentage(rightSecondaryCounter, rightMax) + "\n"
+                                + "Gear: \t\t\t\t\t\t\t\t" + rightGearCounter + "/" + rightMax + "\t\t\t\t" + calculatePercentage(rightGearCounter, rightMax) + "\n"
+                                + "Cannot see: \t\t" + rightCannotSee + "/" + rightMax + "\t\t\t\t" + calculatePercentage(rightCannotSee, rightMax) + "\n"
+                                + "Not accurate: \t" + (rightMax - (rightSteeringCounter + rightRestCounter + rightSecondaryCounter + rightGearCounter + rightCannotSee)) + "/" + rightMax + "\t\t\t\t\t\t" + calculatePercentage((rightMax - (rightSteeringCounter + rightRestCounter + rightSecondaryCounter + rightGearCounter + rightCannotSee)), rightMax) + "\n";
 
                         AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
                         builder
@@ -253,6 +254,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 return true;
             }
         });
+    }
+
+    private String calculatePercentage (int value, int total) {
+        float result = ((float)value / (float)total) * 100;
+        return String.valueOf(new DecimalFormat("##.#").format(result)) + "%";
     }
 
     // Create dialog to choose bluetooth device - Only paired devices show up!

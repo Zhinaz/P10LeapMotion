@@ -188,14 +188,14 @@ public class SegmentData {
         return "Left: \n"
                 + "Steering: \t\t\t\t\t" + leftSteeringCounter + "/" + leftMax + "\n"
                 + "Rest: \t\t\t\t\t\t\t\t" + leftRestCounter + "/" + leftMax + "\n"
-                + "Cannot see hand: \t\t\t" + leftCannotSee + "/" + leftMax + "\n"
-                + "Not accurate enough: \t" + (leftMax - (leftSteeringCounter + leftRestCounter + leftCannotSee)) + "/" + leftMax + "\n"
+                + "Cannot see: \t\t" + leftCannotSee + "/" + leftMax + "\n"
+                + "Not accurate: \t" + (leftMax - (leftSteeringCounter + leftRestCounter + leftCannotSee)) + "/" + leftMax + "\n"
                 + "\n\n" + "Right: \n"
                 + "Steering: \t\t\t\t\t" + rightSteeringCounter + "/" + rightMax + "\n"
                 + "Rest: \t\t\t\t\t\t\t\t" + rightRestCounter + "/" + rightMax + "\n"
                 + "Secondary: \t\t\t" + rightSecondaryCounter + "/" + rightMax + "\n"
                 + "Gear: \t\t\t\t\t\t\t\t" + rightGearCounter + "/" + rightMax + "\n"
-                + "Cannot see hand: \t\t\t" + rightCannotSee + "/" + rightMax + "\n"
-                + "Not accurate enough: \t" + (rightMax - (rightSteeringCounter + rightRestCounter + rightSecondaryCounter + rightGearCounter + rightCannotSee)) + "/" + rightMax + "\n";
+                + "Cannot see: \t\t" + rightCannotSee + "/" + rightMax + "\n"
+                + "Not accurate: \t" + (rightMax - (rightSteeringCounter + rightRestCounter + rightSecondaryCounter + rightGearCounter + rightCannotSee)) + "/" + rightMax + "\n";
     }
 }
