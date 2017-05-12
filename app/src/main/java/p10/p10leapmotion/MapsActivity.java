@@ -1,12 +1,10 @@
 package p10.p10leapmotion;
 
 import android.app.Dialog;
-import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.location.Location;
-import android.os.Environment;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
@@ -24,7 +22,6 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.io.BufferedReader;
@@ -33,11 +30,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-import static p10.p10leapmotion.MainActivity.ATTENTIVE;
 import static p10.p10leapmotion.MainActivity.GOOD;
-import static p10.p10leapmotion.MainActivity.INATTENTIVE;
 import static p10.p10leapmotion.MainActivity.NEUTRAL;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
@@ -98,6 +94,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick(View v) {
                 secondMarkerFeature = true;
+                Toast.makeText(MapsActivity.this, "Select the first marker", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -131,21 +128,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mMap.animateCamera(zoom);
             }
 
-            if (s.getAttentiveState().equals(GOOD)) {
-                Polyline line = mMap.addPolyline(new PolylineOptions()
+            switch (s.getAttentiveState()) {
+                case GOOD: mMap.addPolyline(new PolylineOptions()
                         .add(tempStart, tempEnd)
-                        .width(7)
+                        .width(10)
                         .color(Color.GREEN));
-            } else if (s.getAttentiveState().equals(NEUTRAL)) {
-                Polyline line = mMap.addPolyline(new PolylineOptions()
+                    break;
+                case NEUTRAL: mMap.addPolyline(new PolylineOptions()
                         .add(tempStart, tempEnd)
-                        .width(7)
+                        .width(10)
                         .color(Color.YELLOW));
-            } else {
-                Polyline line = mMap.addPolyline(new PolylineOptions()
+                    break;
+                default: mMap.addPolyline(new PolylineOptions()
                         .add(tempStart, tempEnd)
-                        .width(7)
+                        .width(10)
                         .color(Color.RED));
+                    break;
             }
 
             i++;
@@ -159,59 +157,30 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 int counter = 0;
                 for (SegmentData s : mapData) {
 
+                    // Between two markers, second selection
                     if (firstSelected && markerLocation.latitude == s.getStartLocation().getLatitude() && markerLocation.longitude == s.getStartLocation().getLongitude()) {
-                        String str = calculateDialogString(firstSelection, counter);
-
-                        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
-                        builder
-                                .setTitle(R.string.show_information_dialog_title)
-                                .setMessage(str)
-                                .setPositiveButton(R.string.dialog_ok, new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        dialog.dismiss();
-                                    }
-                                });
-                        builder.create().show();
+                        openDetailsDialog(calculateDialogString(firstSelection, counter));
 
                         firstSelected = false;
                         secondMarkerFeature = false;
                         firstSelection = 0;
                         break;
-                    } else if (secondMarkerFeature && markerLocation.latitude == s.getStartLocation().getLatitude() && markerLocation.longitude == s.getStartLocation().getLongitude()) {
+                    }
+                    // Between two markers, first selection
+                    else if (secondMarkerFeature && markerLocation.latitude == s.getStartLocation().getLatitude() && markerLocation.longitude == s.getStartLocation().getLongitude()) {
                         firstSelection = counter;
                         Toast.makeText(MapsActivity.this, "Choose second marker", Toast.LENGTH_LONG).show();
                         firstSelected = true;
                         break;
-                    } else if (markerLocation.latitude == s.getStartLocation().getLatitude() && markerLocation.longitude == s.getStartLocation().getLongitude()) {
-                        String str = "\n" + s.scoreString() + "\n\n" + s.additionalDataString() + "\n\nNumber: " + (counter + 1) + s.noHandsOnWheel();
-
-                        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
-                        builder
-                                .setTitle(R.string.show_information_dialog_title)
-                                .setMessage(str)
-                                .setPositiveButton(R.string.dialog_ok, new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        dialog.dismiss();
-                                    }
-                                });
-                        builder.create().show();
+                    }
+                    // Single marker selection
+                    else if (markerLocation.latitude == s.getStartLocation().getLatitude() && markerLocation.longitude == s.getStartLocation().getLongitude()) {
+                        openDetailsDialog(calculateDialogString(counter, counter + 1) + "\nNumber: " + (counter + 1));
                         break;
-                    } else if (s == mapData.get(mapData.size() - 1)) {
-                        String str = calculateDialogString(0, mapData.size());
-
-                        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
-                        builder
-                                .setTitle(R.string.show_information_dialog_title)
-                                .setMessage(str)
-                                .setPositiveButton(R.string.dialog_ok, new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        dialog.dismiss();
-                                    }
-                                });
-                        builder.create().show();
+                    }
+                    // Last marker
+                    else if (s == mapData.get(mapData.size() - 1)) {
+                        openDetailsDialog(calculateDialogString(0, mapData.size()));
                         break;
                     }
                     counter++;
@@ -220,6 +189,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 return true;
             }
         });
+    }
+
+    private void openDetailsDialog(String str) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+        builder
+                .setTitle(R.string.show_information_dialog_title)
+                .setMessage(str)
+                .setPositiveButton(R.string.dialog_ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+        builder.create().show();
     }
 
     private String calculatePercentage(int value, int total) {
@@ -281,7 +264,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         scoreAvg = scoreAvg / tempData.size();
         speedAvg = speedAvg / tempData.size();
 
-        String startString = "";
+        String startString;
 
         if (scoreAvg >= 80) {
             startString = "Good job!";
@@ -293,8 +276,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         return startString + "\n\n"
                 + "Average score: \t\t\t\t" + (int) scoreAvg + "\n"
-                + "Average speed: \t\t\t\t" + (int) speedAvg + "\n"
-                + "Total distance: \t\t\t\t" + (int) distance + "\n\n"
+                + "Average speed: \t\t\t\t" + (int) speedAvg + " km/t \n"
+                + "Total distance: \t\t\t\t" + (int) distance + " meters \n\n"
                 + "Left: \n"
                 + "Steering: \t\t\t\t\t" + leftSteeringCounter + "/" + leftMax + "\t\t\t\t" + calculatePercentage(leftSteeringCounter, leftMax) + "\n"
                 + "Rest: \t\t\t\t\t\t\t\t" + leftRestCounter + "/" + leftMax + "\t\t\t\t\t\t" + calculatePercentage(leftRestCounter, leftMax) + "\n"
@@ -306,7 +289,31 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 + "Secondary: \t\t\t" + rightSecondaryCounter + "/" + rightMax + "\t\t\t\t\t\t" + calculatePercentage(rightSecondaryCounter, rightMax) + "\n"
                 + "Gear: \t\t\t\t\t\t\t\t" + rightGearCounter + "/" + rightMax + "\t\t\t\t" + calculatePercentage(rightGearCounter, rightMax) + "\n"
                 + "Cannot see: \t\t" + rightCannotSee + "/" + rightMax + "\t\t\t\t" + calculatePercentage(rightCannotSee, rightMax) + "\n"
-                + "Not accurate: \t" + (rightMax - (rightSteeringCounter + rightRestCounter + rightSecondaryCounter + rightGearCounter + rightCannotSee)) + "/" + rightMax + "\t\t\t\t\t\t" + calculatePercentage((rightMax - (rightSteeringCounter + rightRestCounter + rightSecondaryCounter + rightGearCounter + rightCannotSee)), rightMax) + "\n";
+                + "Not accurate: \t" + (rightMax - (rightSteeringCounter + rightRestCounter + rightSecondaryCounter + rightGearCounter + rightCannotSee)) + "/" + rightMax + "\t\t\t\t\t\t" + calculatePercentage((rightMax - (rightSteeringCounter + rightRestCounter + rightSecondaryCounter + rightGearCounter + rightCannotSee)), rightMax) + "\n"
+                + calculateHandsOnWheel(firstIndex, secondIndex);
+    }
+
+    public String calculateHandsOnWheel(int startIndex, int endIndex) {
+        List<SegmentData> tempData = mapData.subList(startIndex, endIndex);
+
+        String temp = "";
+        int noHandsCounter = 0;
+
+        for (SegmentData segmentData : tempData) {
+
+            for (int i = 0; i < segmentData.getLeftPredStates().size(); i++) {
+                if (segmentData.getLeftPredStates().get(i).equals("2.0") && (segmentData.getRightPredStates().get(i).equals("2.0") || segmentData.getRightPredStates().get(i).equals("3.0"))) {
+                    noHandsCounter++;
+                }
+            }
+        }
+        if (noHandsCounter <= 2) {
+            temp = "\nNo hands: \t\t\t" + noHandsCounter + " times\t\t\t\t~ " + String.valueOf(new DecimalFormat("##.#").format((float) noHandsCounter * 0.5)) + "second";
+        } else if (noHandsCounter > 2) {
+            temp = "\nNo hands: \t\t\t" + noHandsCounter + " times\t\t\t\t~ " + String.valueOf(new DecimalFormat("##.#").format((float) noHandsCounter * 0.5)) + "seconds";
+        }
+
+        return temp;
     }
 
     // Create dialog to choose bluetooth device - Only paired devices show up!
@@ -319,7 +326,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Choose dataset");
-        builder.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_single_choice, tempList), new DialogInterface.OnClickListener() {
+        builder.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_single_choice, tempList), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
                 markerList = new ArrayList<>();
@@ -338,6 +345,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private ArrayList<SegmentData> readSelectedFile(String fileName) {
         ArrayList<SegmentData> tempList = new ArrayList<>();
+        // Example data
         //57.0,9.9 58.0,10.9 126478.29 Infinity GOOD 100.0 (ATTENTIVE,ATTENTIVE,ATTENTIVE,ATTENTIVE,ATTENTIVE) (1.0,1.0,2.0,2.0,3.0) (1.0,1.0,1.0,1.0,2.0)
         //58.0,10.9 59.0,11.9 125720.805 Infinity NEUTRAL 60.000004 (ATTENTIVE,ATTENTIVE,ATTENTIVE,INATTENTIVE,INATTENTIVE) (1.0,4.0,3.0,3.0,3.0) (1.0,2.0,2.0,2.0,2.0)
 
@@ -346,7 +354,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 try {
                     BufferedReader br = new BufferedReader(new FileReader(f));
-                    String line = "";
+                    String line;
 
                     while ((line = br.readLine()) != null) {
                         String[] temp = line.split(" ");
@@ -366,7 +374,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                         // distance and speed
                         float dist = Float.parseFloat(temp[2]);
-                        float speed = 0.0f;
+                        float speed;
                         if (Float.parseFloat(temp[3]) != Float.POSITIVE_INFINITY) {
                             speed = Float.parseFloat(temp[3]);
                         } else {
@@ -380,30 +388,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         // Attentive list
                         String[] attentiveness = temp[6].replace("(", "").replace(")", "").split(",");
                         ArrayList<String> attentiveList = new ArrayList<>();
-                        for (String s : attentiveness) {
-                            attentiveList.add(s);
-                        }
+                        attentiveList.addAll(Arrays.asList(attentiveness));
 
                         // right list
                         String[] rightPreds = temp[7].replace("(", "").replace(")", "").split(",");
                         ArrayList<String> rightPredictions = new ArrayList<>();
-                        for (String s : rightPreds) {
-                            rightPredictions.add(s);
-                        }
+                        rightPredictions.addAll(Arrays.asList(rightPreds));
 
                         // left list
                         String[] leftPreds = temp[8].replace("(", "").replace(")", "").split(",");
                         ArrayList<String> leftPredictions = new ArrayList<>();
-                        for (String s : leftPreds) {
-                            leftPredictions.add(s);
-                        }
+                        leftPredictions.addAll(Arrays.asList(leftPreds));
 
                         SegmentData tempSegment = new SegmentData(startLocation, endLocation, attentiveList, rightPredictions, leftPredictions, speed, score, dist, attentiveState);
                         tempList.add(tempSegment);
                     }
                     br.close();
                 } catch (IOException e) {
-                    //You'll need to add proper error handling here
+                    e.printStackTrace();
                 }
             }
         }
