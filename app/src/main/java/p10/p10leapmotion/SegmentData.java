@@ -2,6 +2,7 @@ package p10.p10leapmotion;
 
 import android.location.Location;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import static p10.p10leapmotion.MainActivity.ATTENTIVE;
@@ -66,6 +67,20 @@ public class SegmentData {
             return (attentiveStates / totalStates) * 100;
         }
         return 0;
+    }
+
+    private float calculateScoreTest() {
+        float totalStates = attentivePredStates.size();
+        float attentiveStates = 0;
+
+        if (totalStates > 0) {
+            for (String state : attentivePredStates) {
+                if (state.equals(ATTENTIVE)) {
+                    attentiveStates++;
+                }
+            }
+        }
+        return (attentiveStates / totalStates) * 100;
     }
 
     private String calculateAttentiveState(float score) {
@@ -145,7 +160,27 @@ public class SegmentData {
     }
 
     public String scoreString() {
-        return "Score: \t\t\t\t\t\t\t" + (int)score;
+        return "Score: \t\t\t\t\t\t\t" + String.valueOf(new DecimalFormat("##.#").format(calculateScoreTest()));
+    }
+
+    public String noHandsOnWheel() {
+        String temp = "";
+        int noHandsCounter = 0;
+
+        for (int i = 0; i < leftPredStates.size(); i++) {
+            if (leftPredStates.get(i).equals("2.0") && (rightPredStates.get(i).equals("2.0") || rightPredStates.get(i).equals("3.0"))) {
+                noHandsCounter++;
+            }
+        }
+
+        if (noHandsCounter == 1) {
+            temp = "\n\nNo hands: \t\t\t" + noHandsCounter + " time\t\t\t\t~ " + String.valueOf(new DecimalFormat("##.#").format((float) noHandsCounter * 0.5)) + "second(s)";
+        } else if (noHandsCounter == 2) {
+            temp = "\n\nNo hands: \t\t\t" + noHandsCounter + " times\t\t\t\t~ " + String.valueOf(new DecimalFormat("##.#").format((float) noHandsCounter * 0.5)) + "second";
+        } else if (noHandsCounter > 2) {
+            temp = "\n\nNo hands: \t\t\t" + noHandsCounter + " times\t\t\t\t~ " + String.valueOf(new DecimalFormat("##.#").format((float) noHandsCounter * 0.5)) + "seconds";
+        }
+        return temp;
     }
 
     public String additionalDataString() {
@@ -177,7 +212,7 @@ public class SegmentData {
             } else if (s.equals("2.0")) {
                 rightRestCounter++;
             } else if (s.equals("3.0")) {
-                rightSteeringCounter++;
+                rightSecondaryCounter++;
             } else if (s.equals("4.0")) {
                 rightGearCounter++;
             } else if (s.equals("-1.0")) {
