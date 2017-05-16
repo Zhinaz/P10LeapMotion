@@ -104,7 +104,7 @@ public class MainActivity extends AppCompatActivity implements
     private String mConnectedDeviceName = null;
 
     public static final Integer INSTANCES_BEFORE_WARNING = 4;
-    public static final double MINIMUM_METER_DRIVEN = 60;
+    public static final double MINIMUM_METER_DRIVEN = 10;
     public static final Integer MINIMUM_SPEED = 5;
     public static final Integer SCORE_SHOW_TIMER = 1000 * 8; // Given in seconds
 
@@ -276,6 +276,8 @@ public class MainActivity extends AppCompatActivity implements
                 attentivePredictedStates = new ArrayList<>();
                 rightPredictedStates = new ArrayList<>();
                 leftPredictedStates = new ArrayList<>();
+
+                mLastLocation = location;
             }
 
             if (location.getSpeed() <= MINIMUM_SPEED && routeData.size() >= 12) {
@@ -295,7 +297,6 @@ public class MainActivity extends AppCompatActivity implements
                 routeData.clear();
             }
         }
-        mLastLocation = location;
     }
 
     @Override
@@ -795,7 +796,7 @@ public class MainActivity extends AppCompatActivity implements
         // Example message is: "INATTENTIVE 3.0 1.0" First value is predictedRight, second is predictedLeft
         String[] temp = message.split(" ");
 
-        txt_message.setText(message);
+        //txt_message.setText(message); //Testing: Shows bluetooth message in txt_message
 
         // addToStateList(temp[0]); // Starts immediate feedback
         if (dataCollecting) {

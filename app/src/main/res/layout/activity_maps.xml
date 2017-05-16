@@ -26,4 +26,15 @@
         android:padding="10dp"
         android:layout_marginTop="50dp"
         android:paddingEnd="10dp"/>
+
+    <Button
+        android:id="@+id/btn_between"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|top"
+        android:text="Two points"
+        android:padding="10dp"
+        android:layout_marginTop="90dp"
+        android:paddingEnd="10dp"/>
+
 </fragment>
