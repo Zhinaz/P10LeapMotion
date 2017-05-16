@@ -72,8 +72,7 @@ public class MainActivity extends AppCompatActivity implements
     // UI Elements
     public TextView txt_score;
     public TextView txt_message;
-    public Button startButton;
-    public Button stopButton;
+    public TextView txt_status;
     public GifImageView gifImageView;
 
     public static final String BLUETOOTH_PAIRED_DEVICES = "BLUETOOTH_PAIRED_DEVICES";
@@ -218,9 +217,33 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
+    public boolean onPrepareOptionsMenu (Menu menu) {
+
+        MenuItem startItem = menu.findItem(R.id.start_collect);
+        MenuItem stopItem = menu.findItem(R.id.stop_collect);
+
+        if (dataCollecting) {
+            startItem.setEnabled(false);
+            stopItem.setEnabled(true);
+        } else {
+            startItem.setEnabled(true);
+            stopItem.setEnabled(false);
+        }
+        return true;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
         switch (item.getItemId()) {
+            case R.id.start_collect:
+                CreateNewFileDialog createNewFileDialog = new CreateNewFileDialog();
+                createNewFileDialog.show(getSupportFragmentManager(), "AddNewFile");
+                return true;
+            case R.id.stop_collect:
+                stopCollecting();
+                txt_status.setText("Not collecting");
+                return true;
             case R.id.connect:
                 chooseBluetoothDevice();
                 return true;
@@ -336,8 +359,9 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onAcceptNewFile(String _title) {
         createNewDataFile(_title);
+        txt_status.setText("Collecting");
         startCollecting();
-        gifImageView.setGifImageResource(R.drawable.gif_hypetrain);
+
     }
 
     private void initialiseComponents() {
@@ -345,24 +369,7 @@ public class MainActivity extends AppCompatActivity implements
         gifImageView = (GifImageView) findViewById(R.id.GifImageView);
         txt_score = (TextView) findViewById(R.id.txt_score);
         txt_message = (TextView) findViewById(R.id.txt_message);
-
-        startButton = (Button) findViewById(R.id.btn_start);
-        startButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                CreateNewFileDialog createNewFileDialog = new CreateNewFileDialog();
-                createNewFileDialog.show(getSupportFragmentManager(), "AddNewFile");
-            }
-        });
-
-        stopButton = (Button) findViewById(R.id.btn_stop);
-        stopButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                gifImageView.setGifImageResource(R.drawable.cats);
-                stopCollecting();
-            }
-        });
+        txt_status = (TextView) findViewById(R.id.txt_status);
 
         txt_score.setVisibility(View.INVISIBLE);
         txt_message.setVisibility(View.INVISIBLE);
