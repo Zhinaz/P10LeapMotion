@@ -727,9 +727,9 @@ public class MainActivity extends AppCompatActivity implements
         if (attentiveType.equals(GOOD)) {
             warningMessage = "Good job on that last section";
         } else if (attentiveType.equals(NEUTRAL)) {
-            warningMessage = "Remember to stay alert";
+            warningMessage = "Remember to hold the steering wheel properly";
         } else if (attentiveType.equals(NEGATIVE)) {
-            warningMessage = "Your driving could be improved";
+            warningMessage = "Your driving should be improved";
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {

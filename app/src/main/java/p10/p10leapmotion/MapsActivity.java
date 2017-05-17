@@ -307,10 +307,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             }
         }
-        if (noHandsCounter <= 2) {
-            temp = "\nNo hands: \t\t\t" + noHandsCounter + " times\t\t\t\t~ " + String.valueOf(new DecimalFormat("##.#").format((float) noHandsCounter * 0.5)) + "second";
-        } else if (noHandsCounter > 2) {
-            temp = "\nNo hands: \t\t\t" + noHandsCounter + " times\t\t\t\t~ " + String.valueOf(new DecimalFormat("##.#").format((float) noHandsCounter * 0.5)) + "seconds";
+        if (noHandsCounter <= 4) {
+            temp = "\nNo hands: \t\t\t" + noHandsCounter + " times\t\t\t\t~ " + String.valueOf(new DecimalFormat("##.#").format((float) noHandsCounter * 0.25)) + "second";
+        } else if (noHandsCounter > 4) {
+            temp = "\nNo hands: \t\t\t" + noHandsCounter + " times\t\t\t\t~ " + String.valueOf(new DecimalFormat("##.#").format((float) noHandsCounter * 0.25)) + "seconds";
         }
 
         return temp;
