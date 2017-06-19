@@ -75,6 +75,7 @@
                 android:layout_height="wrap_content"
                 android:textAlignment="center"
                 android:textSize="16sp"
+                android:text="Not collecting"
                 tools:text="Status" />
 
             <TextView
@@ -83,7 +84,6 @@
                 android:layout_height="wrap_content"
                 android:textAlignment="center"
                 android:textSize="100sp"
-                android:text="87.2"
                 tools:text="Score" />
 
             <TextView
@@ -92,7 +92,6 @@
                 android:layout_height="wrap_content"
                 android:textAlignment="center"
                 android:textSize="36sp"
-                android:text="Good job on that last section"
                 tools:text="Message" />
 
             <p10.p10leapmotion.GifImageView
